@@ -37,5 +37,4 @@ public interface MapDao {
     @Delete
     void deleteAll(List<Map> map);
 
-
 }

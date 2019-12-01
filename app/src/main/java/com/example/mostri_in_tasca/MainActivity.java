@@ -54,7 +54,8 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Style.OnStyleLoaded, PermissionsListener {
     SharedPreferences settings;
-    MapDatabase db;
+    MapDatabase dbMap;
+    ImagesDatabase dbImages;
     private MapView mapView;
     private MapboxMap mapboxMap = null;
     private PermissionsManager permissionsManager;
@@ -65,20 +66,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
     private static final long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private SymbolManager symbolManager;
-    public static final String SYMBOL_IMAGE = "pika";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //nascondere title bar
+        //nasconde la title bar
         try{
             this.getSupportActionBar().hide();
         }
         catch (NullPointerException e){}
 
         settings = getSharedPreferences("preferences",0);
-        db = Room.databaseBuilder(getApplicationContext(), MapDatabase.class,"db_map").build();
+        dbMap = Room.databaseBuilder(getApplicationContext(), MapDatabase.class,"db_map").build();
+        dbImages = Room.databaseBuilder(getApplicationContext(), ImagesDatabase.class,"db_images").build();
 
         Mapbox.getInstance(this, "pk.eyJ1IjoidHJ1ZWN1b3p6bzk4IiwiYSI6ImNrMzRhcWF2ajBqejAzbW55MTZ5YXRlMTMifQ.IjE4RdeW6pTzUh9cyUVmxQ");
         setContentView(R.layout.activity_main);
@@ -88,6 +89,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         permissionsManager = new PermissionsManager(this);
         locationEngine = LocationEngineProvider.getBestLocationEngine(this);
         locationListeningCallback = new LocationListeningCallback(this);
+
+        // Controllo che sia la prima volta
+        if (checkIfFirstTime()) {
+            Log.d("session_id","È la prima volta");
+            // Imposto che non è più la prima volta
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putBoolean("firstTime",false);
+            editor.apply();
+            getSessionIdRequest();
+        } else {
+            Log.d("session_id", "Non è la prima volta; il session_id è: " + settings.getString("session_id", null));
+        }
     }
 
     @Override
@@ -101,23 +114,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onResume();
         mapView.onResume();
 
-        // Controllo che sia la prima volta
-        if (checkIfFirstTime()) {
-            Log.d("session_id","È la prima volta");
-            // Imposto che non è più la prima volta
-            SharedPreferences.Editor editor = settings.edit();
-            editor.putBoolean("firstTime",false);
-            editor.commit();
-            getSessionIdRequest();
-        } else {
-            Log.d("session_id","Non è la prima volta");
-            Log.d("session_id", "dopo la prima volta, il session_id è: "+ settings.getString("session_id", null));
-            getmapRequest();
-        }
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                if(settings.getString("session_id", null) != null){
+                    getmapRequest();
+                }
+
+                Log.d("getimgSize", String.valueOf(dbImages.imagesDao().getImage().size()));
+                if(dbImages.imagesDao().getImage().size() == 0 && dbMap.mapDao().getMap().size()!=0){
+                    Log.d("getimg", "size dbMap: " + dbMap.mapDao().getMap().size());
+                    for(int i=0 ; i<dbMap.mapDao().getMap().size() ; i++){
+                        Log.d("getimg", "nel for id: " + dbMap.mapDao().getMapId().get(i));
+                        getImagesRequest(dbMap.mapDao().getMapId().get(i));
+                    }
+                    populateImagesModel();
+                }
+            }
+        });
+
+
+
     }
 
     public boolean checkIfFirstTime() {
         return settings.getBoolean("firstTime",true);
+    }
+
+    public boolean checkIfDbImgIsSet() {
+        return settings.getBoolean("dbImgIsSet",false);
     }
 
     public void getSessionIdRequest(){
@@ -137,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Log.d("session_id", "session_id da Json response "+session_id);
                             SharedPreferences.Editor editor = settings.edit();
                             editor.putString("session_id",session_id);
-                            editor.commit();
+                            editor.apply();
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -157,6 +182,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         JSONObject jsonBody = new JSONObject();
 
+        Log.d("getmap", "session in dentro getmapRequest " + settings.getString("session_id", null));
+
         try {
             jsonBody.put("session_id", settings.getString("session_id", null));
         } catch (JSONException e) {
@@ -173,39 +200,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         final List<Map> map = Model.deserialize(response);
 
-                        //Log.d("getmap", "test: "+map.get(0).getId().toString());
-
                         // Metto gli oggetti della mappa scaricati nel database
                         AsyncTask.execute(new Runnable() {
                             @Override
                             public void run() {
-                                Log.d("getmap","Metto in Database");
-                                db.mapDao().deleteAll(map);
-                                db.mapDao().setMap(map);
-
+                                Log.d("getmap", "Metto in Database");
+                                dbMap.mapDao().deleteAll(map);
+                                dbMap.mapDao().setMap(map);
+                                Log.d("getimg", "size dbMap (dentro getmapRequest): " + dbMap.mapDao().getMap().size());
                                 //Una volta riempito il database, li devo spostare nel Model
                                 populateMapModel();
-
-                                //Log.d("getmap", db.mapDao().getMapName().toString() );
-                                /*Model.getInstance().populate(map);
-                                ArrayList<Map> test = Model.getInstance().getMapList();
-                                Log.d("getmap","Model.getInstance(): " + test.get(0).getName());*/
                             }
                         });
-
-                        /*new Thread() {
-                            @Override
-                            public void run() {
-                                super.run();
-                                Log.d("getmap","Metto in Database");
-                                db.mapDao().setMap(map);
-                                //Una volta riempito il database, li devo spostare nel Model
-                                //populateMapModel();
-                                Model.getInstance().populate(map);
-                            }
-                        }.start();*/
-
-
                     }
                 },
                 new Response.ErrorListener() {
@@ -218,6 +224,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         requestQueue.add(getmapRequest);
     }
 
+    public void getImagesRequest(final String id){
+        Log.d("getimg", "id: "+id);
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        JSONObject jsonBody = new JSONObject();
+
+        try {
+            jsonBody.put("session_id", settings.getString("session_id", null));
+            jsonBody.put("target_id", id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest getimgRequest = new JsonObjectRequest(
+                "https://ewserver.di.unimi.it/mobicomp/mostri/getimage.php",
+                jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("getimg", "response: " + response.toString());
+
+                        String img = null;
+                        try {
+                            img = response.getString("img");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        final String finalImg = img;
+                        AsyncTask.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d("getimg", "Metto in Database");
+                                dbImages.imagesDao().addImage(new Images(id, finalImg));
+                                Log.d("getimgSize", "getimg size (getImages): " + dbImages.imagesDao().getImage().size());
+                            }
+                        });
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("getimg", "Richiesta getimg fallita: " + error);
+                    }
+                }
+        );
+        requestQueue.add(getimgRequest);
+    }
+
     public void populateMapModel() {
         Log.d("getmap","sono nel metodo populateMapModel");
 
@@ -226,12 +280,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 Log.d("getmap","Prendo dal Database");
                 //Prendo gli studenti dal database e li metto nel Model
-                List<Map> map = db.mapDao().getMap();
-                Model.getInstance().populate(map);
+                List<Map> map = dbMap.mapDao().getMap();
+                Model.getInstance().populateMap(map);
                 Log.d("getmap","getInstance()" + Model.getInstance());
             }
         });
     }
+
+    public void populateImagesModel() {
+        Log.d("getimg","sono nel metodo populateImagesModel");
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d("getimg","Prendo dal Database");
+                //Prendo gli studenti dal database e li metto nel Model
+                List<Images> img = dbImages.imagesDao().getAllImages();
+                Model.getInstance().populateImages(img);
+                Log.d("getimg","getInstance img size" + Model.getInstance().getImageList().size());
+            }
+        });
+    }
+
+
 
     @Override
     public void onMapReady(@NonNull MapboxMap mapboxMap) {
@@ -248,29 +319,40 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
-                final List<Double> lats = db.mapDao().getMapLat();
-                final List<Double> lons = db.mapDao().getMapLon();
+                final List<Double> lats = dbMap.mapDao().getMapLat();
+                final List<Double> lons = dbMap.mapDao().getMapLon();
+                final List<String> finalId = dbMap.mapDao().getMapId();
 
+                Log.d("MyMap", "size: " + lats.size());
                 Log.d("MyMap", "lat: " + lats + " lon: "+ lons);
-                for (int i = 0 ; i<3 /*lats.size()*/ ; i++){
-                    Log.d("MyMap", "lat: " + lats.get((i)) + " lon: "+ lons.get((i)));
 
+                for (int i = 0 ; i<lats.size() ; i++){
+                    Log.d("MyMap", "lat: " + lats.get((i)) + " lon: "+ lons.get((i)));
+                    Log.d("MyMap", "finalId: " + finalId.get(i));
                     final int finalI = i;
+                    String string = dbImages.imagesDao().getImage().get(i).replace("\\", "");
+                    Log.d("MyMap", string);
+                    //byte[] decodedString = Base64.decode(string, Base64.DEFAULT);
+                    //final Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                    //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
+
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
-                            style.addImage(SYMBOL_IMAGE, BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.pika));
+                            style.addImage(finalId.get(finalI), BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage));
                             symbolManager = new SymbolManager(mapView, mapboxMap, style);
                             symbolManager.setIconAllowOverlap(true);
                             symbolManager.setTextAllowOverlap(true);
                             symbolManager.create(new SymbolOptions()
                                     .withLatLng(new LatLng(lats.get((finalI)), lons.get(finalI)))
-                                    .withIconImage(SYMBOL_IMAGE)
-                                    .withIconSize(0.07f));
+                                    .withIconImage(finalId.get(finalI))
+                                    .withIconSize(0.2f));
+
                             symbolManager.addClickListener(new OnSymbolClickListener() {
                                 @Override
                                 public void onAnnotationClick(Symbol symbol) {
-                                    Log.d("MyMap","Simbolo toccato");
+                                    Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
                                 }
                             });
                         }
@@ -279,29 +361,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         });
-
-        /*style.addImage(SYMBOL_IMAGE, BitmapFactory.decodeResource(
-                MainActivity.this.getResources(), R.drawable.pika));
-        symbolManager = new SymbolManager(mapView, mapboxMap, style);
-        symbolManager.setIconAllowOverlap(true);
-        symbolManager.setTextAllowOverlap(true);
-        symbolManager.create(new SymbolOptions()
-                .withLatLng(new LatLng(45.4767, 9.2319))
-                .withIconImage(SYMBOL_IMAGE)
-                .withIconSize(0.07f));
-        symbolManager.addClickListener(new OnSymbolClickListener() {
-            @Override
-            public void onAnnotationClick(Symbol symbol) {
-                Log.d("MyMap","Simbolo toccato");
-            }
-        });*/
-
-        CameraPosition position = new CameraPosition.Builder()
-                .target(new LatLng(51.50550, -0.07520))
-                .zoom(10)
-                .tilt(20)
-                .build();
-        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
 
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
             showUserLastLocation();
@@ -325,16 +384,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationComponent.setLocationComponentEnabled(true);
         locationComponent.setCameraMode(CameraMode.TRACKING);
         locationComponent.setRenderMode(RenderMode.COMPASS);
+
+        CameraPosition position = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))
+                .zoom(10)
+                .tilt(20)
+                .build();
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
     }
 
-    public void onCenterButtonPressed(View view) {
-        if (location != null) {
-            CameraPosition position = new CameraPosition.Builder()
-                    .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                    .zoom(10)
-                    .tilt(20)
-                    .build();
-            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
+    public void onMyPositionButtonPressed(View view) {
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            if (location != null) {
+                showUserLastLocation();
+            }
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
         }
     }
 

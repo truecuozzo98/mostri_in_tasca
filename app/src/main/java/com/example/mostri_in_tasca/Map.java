@@ -46,7 +46,6 @@ public class Map {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     public String getId() {

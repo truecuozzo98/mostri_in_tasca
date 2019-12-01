@@ -12,6 +12,7 @@ import java.util.List;
 public class Model {
     private static final Model ourInstance = new Model();
     private ArrayList<Map> mapList;
+    private ArrayList<Images> imgList;
 
     public static Model getInstance() {
         return ourInstance;
@@ -21,12 +22,20 @@ public class Model {
         mapList = new ArrayList<>();
     }
 
-    public void populate(List<Map> map) {
+    public void populateMap(List<Map> map) {
         mapList = new ArrayList<>(map);
+    }
+
+    public void populateImages(List<Images> img) {
+        imgList = new ArrayList<>(img);
     }
 
     public ArrayList<Map> getMapList() {
         return mapList;
+    }
+
+    public ArrayList<Images> getImageList() {
+        return imgList;
     }
 
     public static List<Map> deserialize(JSONObject serverResponse) {
