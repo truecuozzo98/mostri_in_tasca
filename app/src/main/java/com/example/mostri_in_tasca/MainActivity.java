@@ -1,12 +1,14 @@
 package com.example.mostri_in_tasca;
 
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -49,8 +51,6 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
-
-
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Style.OnStyleLoaded, PermissionsListener {
     SharedPreferences settings;
@@ -107,6 +107,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStart() {
         super.onStart();
         mapView.onStart();
+
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            showUserLastLocation();
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
     }
 
     @Override
@@ -114,35 +121,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onResume();
         mapView.onResume();
 
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                if(settings.getString("session_id", null) != null){
-                    getmapRequest();
-                }
+        getmapRequest();
+        populateMapModel();
+        populateImagesModel();
 
-                Log.d("getimgSize", String.valueOf(dbImages.imagesDao().getImage().size()));
-                if(dbImages.imagesDao().getImage().size() == 0 && dbMap.mapDao().getMap().size()!=0){
-                    Log.d("getimg", "size dbMap: " + dbMap.mapDao().getMap().size());
-                    for(int i=0 ; i<dbMap.mapDao().getMap().size() ; i++){
-                        Log.d("getimg", "nel for id: " + dbMap.mapDao().getMapId().get(i));
-                        getImagesRequest(dbMap.mapDao().getMapId().get(i));
-                    }
-                    populateImagesModel();
-                }
-            }
-        });
-
-
-
+        mapView.getMapAsync(this);
     }
 
     public boolean checkIfFirstTime() {
         return settings.getBoolean("firstTime",true);
-    }
-
-    public boolean checkIfDbImgIsSet() {
-        return settings.getBoolean("dbImgIsSet",false);
     }
 
     public void getSessionIdRequest(){
@@ -210,6 +197,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 Log.d("getimg", "size dbMap (dentro getmapRequest): " + dbMap.mapDao().getMap().size());
                                 //Una volta riempito il database, li devo spostare nel Model
                                 populateMapModel();
+
+                                if(dbImages.imagesDao().getImage().size() == 0 && dbMap.mapDao().getMap().size()!=0){
+                                    Log.d("getimg", "size dbMap: " + dbMap.mapDao().getMap().size());
+                                    for(int i=0 ; i<dbMap.mapDao().getMap().size() ; i++){
+                                        Log.d("getimg", "nel for id: " + dbMap.mapDao().getMapId().get(i));
+                                        getImagesRequest(dbMap.mapDao().getMapId().get(i));
+                                    }
+                                    populateImagesModel();
+                                }
                             }
                         });
                     }
@@ -315,39 +311,108 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStyleLoaded(@NonNull final Style style) {
         Log.d("MyMap", "Style ready");
         this.style = style;
+        int size = Model.getInstance().getMapList().size();
+
+        for (int i = 0 ; i<size ; i++){
+            final Double lat = Model.getInstance().getMapLat(i);
+            final Double lon = Model.getInstance().getMapLon(i);
+            final String id = Model.getInstance().getImageId(i);
+
+            Log.d("MyMap", "finalId: " + id);
+
+            String base64_img = Model.getInstance().getImageImg(i);
+            byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+            final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+            //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
+
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    style.addImage(id, BitmapImg);
+                    symbolManager = new SymbolManager(mapView, mapboxMap, style);
+                    symbolManager.setIconAllowOverlap(true);
+                    symbolManager.setTextAllowOverlap(true);
+                    symbolManager.create(new SymbolOptions()
+                            .withLatLng(new LatLng(lat, lon))
+                            .withIconImage(id)
+                            .withIconSize(0.5f));
+
+                    symbolManager.addClickListener(new OnSymbolClickListener() {
+                        @Override
+                        public void onAnnotationClick(Symbol symbol) {
+                            Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
+                        }
+                    });
+                }
+            });
+
+        }
+
+
+        /*if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            showUserLastLocation();
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }*/
+    }
+
+
+    /*@Override
+    public void onStyleLoaded(@NonNull final Style style) {
+        Log.d("MyMap", "Style ready");
+        this.style = style;
 
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 final List<Double> lats = dbMap.mapDao().getMapLat();
                 final List<Double> lons = dbMap.mapDao().getMapLon();
-                final List<String> finalId = dbMap.mapDao().getMapId();
 
                 Log.d("MyMap", "size: " + lats.size());
                 Log.d("MyMap", "lat: " + lats + " lon: "+ lons);
 
+                //id getmap
+                String s1 = "";
+                String s2 = "";
+                for(int i = 0; i<dbMap.mapDao().getMap().size() ; i++){
+                    s1 += dbMap.mapDao().getMapId().get(i) + " ";
+                }
+                Log.d("MyMap", "id getmap: " + s1);
+
+                //id getimg
+                for(int i = 0; i<dbImages.imagesDao().getImageId().size() ; i++){
+                    s2 += dbMap.mapDao().getMapName().get(i) + " ";
+                }
+                Log.d("MyMap", "nome getmap: " + s2);
+
+
                 for (int i = 0 ; i<lats.size() ; i++){
                     Log.d("MyMap", "lat: " + lats.get((i)) + " lon: "+ lons.get((i)));
-                    Log.d("MyMap", "finalId: " + finalId.get(i));
+
                     final int finalI = i;
-                    String string = dbImages.imagesDao().getImage().get(i).replace("\\", "");
-                    Log.d("MyMap", string);
-                    //byte[] decodedString = Base64.decode(string, Base64.DEFAULT);
-                    //final Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    final String finalId = dbImages.imagesDao().getImageId().get(i);
+
+                    Log.d("MyMap", "finalId: " + finalId);
+
+                    String base64_img = dbImages.imagesDao().getImage().get(i);
+                    byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+                    final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
                     //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
 
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
-                            style.addImage(finalId.get(finalI), BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage));
+                            style.addImage(finalId, BitmapImg);
                             symbolManager = new SymbolManager(mapView, mapboxMap, style);
                             symbolManager.setIconAllowOverlap(true);
                             symbolManager.setTextAllowOverlap(true);
                             symbolManager.create(new SymbolOptions()
                                     .withLatLng(new LatLng(lats.get((finalI)), lons.get(finalI)))
-                                    .withIconImage(finalId.get(finalI))
-                                    .withIconSize(0.2f));
+                                    .withIconImage(finalId)
+                                    .withIconSize(0.5f));
 
                             symbolManager.addClickListener(new OnSymbolClickListener() {
                                 @Override
@@ -368,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
-    }
+    }*/
 
     public void showUserLastLocation() {
         LocationEngineRequest request = new LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)

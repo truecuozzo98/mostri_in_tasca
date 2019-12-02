@@ -20,6 +20,7 @@ public class Model {
 
     private Model() {
         mapList = new ArrayList<>();
+        imgList = new ArrayList<>();
     }
 
     public void populateMap(List<Map> map) {
@@ -34,9 +35,19 @@ public class Model {
         return mapList;
     }
 
+    public String getMapId(int i){ return mapList.get(i).getId(); }
+    public double getMapLat(int i){ return mapList.get(i).getLat(); }
+    public double getMapLon(int i){ return mapList.get(i).getLon(); }
+    public String getMapSize(int i){ return mapList.get(i).getSize(); }
+    public String getMapType(int i){ return mapList.get(i).getType(); }
+    public String getMapName(int i){ return mapList.get(i).getName(); }
+
     public ArrayList<Images> getImageList() {
         return imgList;
     }
+
+    public String getImageId(int i){ return imgList.get(i).getId(); }
+    public String getImageImg(int i){ return imgList.get(i).getImg(); }
 
     public static List<Map> deserialize(JSONObject serverResponse) {
         Log.d("getmap","Deserializzando");
@@ -52,6 +63,7 @@ public class Model {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        Log.d("getmap", "deserialize map id: " + list.get(0).getId());
         return list;
     }
 }
