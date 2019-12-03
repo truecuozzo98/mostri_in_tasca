@@ -32,6 +32,7 @@ dependencies {
     def room_version = "2.2.1"
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
+    implementation 'de.hdodenhof:circleimageview:3.0.1'
 }
 repositories {
     mavenCentral()

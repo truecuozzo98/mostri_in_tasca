@@ -1,5 +1,6 @@
 package com.example.mostri_in_tasca;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -81,14 +82,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         dbMap = Room.databaseBuilder(getApplicationContext(), MapDatabase.class,"db_map").build();
         dbImages = Room.databaseBuilder(getApplicationContext(), ImagesDatabase.class,"db_images").build();
 
+        permissionsManager = new PermissionsManager(this);
+        locationEngine = LocationEngineProvider.getBestLocationEngine(this);
+        locationListeningCallback = new LocationListeningCallback(this);
+
         Mapbox.getInstance(this, "pk.eyJ1IjoidHJ1ZWN1b3p6bzk4IiwiYSI6ImNrMzRhcWF2ajBqejAzbW55MTZ5YXRlMTMifQ.IjE4RdeW6pTzUh9cyUVmxQ");
         setContentView(R.layout.activity_main);
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-        permissionsManager = new PermissionsManager(this);
-        locationEngine = LocationEngineProvider.getBestLocationEngine(this);
-        locationListeningCallback = new LocationListeningCallback(this);
 
         // Controllo che sia la prima volta
         if (checkIfFirstTime()) {
@@ -108,9 +110,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onStart();
         mapView.onStart();
 
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            showUserLastLocation();
-        } else {
+        if (!PermissionsManager.areLocationPermissionsGranted(this)) {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
@@ -298,8 +298,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-
-
     @Override
     public void onMapReady(@NonNull MapboxMap mapboxMap) {
         Log.d("MyMap", "Map ready");
@@ -346,16 +344,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     });
                 }
             });
-
         }
 
-
-        /*if (PermissionsManager.areLocationPermissionsGranted(this)) {
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
             showUserLastLocation();
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
-        }*/
+        }
     }
 
 
@@ -453,6 +449,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         CameraPosition position = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
                 .zoom(10)
+                //.zoom(15)
                 .tilt(20)
                 .build();
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
@@ -467,6 +464,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
+    }
+
+    public void profileButtonPressed(View view) {
+        Intent intent = new Intent(getApplicationContext(), Profile.class);
+        startActivity(intent);
     }
 
     @Override
@@ -511,6 +513,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onPermissionResult(boolean granted) {
         if (granted) {
             showUserLastLocation();
+            mapView.getMapAsync(this);
         } else {
             Toast.makeText(this, "Permesso non dato", Toast.LENGTH_LONG).show();
         }
@@ -522,8 +525,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    private static class LocationListeningCallback
-            implements LocationEngineCallback<LocationEngineResult> {
+    private static class LocationListeningCallback implements LocationEngineCallback<LocationEngineResult> {
 
         private final WeakReference<MainActivity> activityWeakReference;
         private MainActivity mainActivity;

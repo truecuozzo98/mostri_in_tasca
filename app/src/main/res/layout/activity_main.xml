@@ -11,6 +11,7 @@
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
     </com.mapbox.mapboxsdk.maps.MapView>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -30,6 +31,18 @@
             android:src="@drawable/current_position_icon"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
+
+        <Button
+            android:id="@+id/profileButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginBottom="50dp"
+            android:elevation="5dp"
+            android:onClick="profileButtonPressed"
+            android:text="profile"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
