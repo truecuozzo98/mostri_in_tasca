@@ -13,6 +13,7 @@ public class Model {
     private static final Model ourInstance = new Model();
     private ArrayList<Map> mapList;
     private ArrayList<Images> imgList;
+    private ArrayList<Player> players;
 
     public static Model getInstance() {
         return ourInstance;
@@ -21,6 +22,7 @@ public class Model {
     private Model() {
         mapList = new ArrayList<>();
         imgList = new ArrayList<>();
+        players = new ArrayList<>();
     }
 
     public void populateMap(List<Map> map) {
@@ -31,8 +33,16 @@ public class Model {
         imgList = new ArrayList<>(img);
     }
 
+    public void populatePlayers(List<Player> players) {
+        this.players = new ArrayList<>(players);
+    }
+
     public ArrayList<Map> getMapList() {
         return mapList;
+    }
+
+    public ArrayList<Player> getPlayersList() {
+        return players;
     }
 
     public String getMapId(int i){ return mapList.get(i).getId(); }
@@ -49,7 +59,7 @@ public class Model {
     public String getImageId(int i){ return imgList.get(i).getId(); }
     public String getImageImg(int i){ return imgList.get(i).getImg(); }
 
-    public static List<Map> deserialize(JSONObject serverResponse) {
+    public static List<Map> deserializeMap(JSONObject serverResponse) {
         Log.d("getmap","Deserializzando");
         List<Map> list = new ArrayList<>();
         try {
@@ -66,4 +76,22 @@ public class Model {
         Log.d("getmap", "deserialize map id: " + list.get(0).getId());
         return list;
     }
+
+    public static List<Player> deserializeRanking(JSONObject serverResponse) {
+        Log.d("getRanking","Deserializzando");
+        List<Player> list = new ArrayList<>();
+        try {
+            JSONArray getrankingJSON = serverResponse.getJSONArray("ranking");
+            Log.d("getRanking", getrankingJSON.toString());
+            for (int i = 0; i < getrankingJSON.length(); i++) {
+                JSONObject rankingJSON = getrankingJSON.getJSONObject(i);
+                Player ranking = new Player(rankingJSON);
+                list.add(ranking);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 }

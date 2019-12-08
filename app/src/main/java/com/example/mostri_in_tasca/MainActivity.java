@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onResponse(JSONObject response) {
                         Log.d("getmap", response.toString());
 
-                        final List<Map> map = Model.deserialize(response);
+                        final List<Map> map = Model.deserializeMap(response);
 
                         // Metto gli oggetti della mappa scaricati nel database
                         AsyncTask.execute(new Runnable() {
@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 //Prendo gli studenti dal database e li metto nel Model
                 List<Map> map = dbMap.mapDao().getMap();
                 Model.getInstance().populateMap(map);
-                Log.d("getmap","getInstance()" + Model.getInstance());
+                Log.d("getmap","getInstance()" + Model.getInstance().getMapList());
             }
         });
     }
@@ -470,6 +470,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Intent intent = new Intent(getApplicationContext(), Profile.class);
         startActivity(intent);
     }
+
+    public void rankingButtonPressed(View view) {
+        Intent intent = new Intent(getApplicationContext(), Ranking.class);
+        startActivity(intent);
+    }
+
 
     @Override
     public void onPause() {
