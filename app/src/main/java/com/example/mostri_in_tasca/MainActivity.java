@@ -309,11 +309,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStyleLoaded(@NonNull final Style style) {
         Log.d("MyMap", "Style ready");
         this.style = style;
-        int size = Model.getInstance().getMapList().size();
+        symbolManager = new SymbolManager(mapView, mapboxMap, style);
+        symbolManager.deleteAll();
 
+        int size = Model.getInstance().getMapList().size();
         for (int i = 0 ; i<size ; i++){
-            final Double lat = Model.getInstance().getMapLat(i);
-            final Double lon = Model.getInstance().getMapLon(i);
+            final double lat = Model.getInstance().getMapLat(i);
+            final double lon = Model.getInstance().getMapLon(i);
             final String id = Model.getInstance().getImageId(i);
 
             Log.d("MyMap", "finalId: " + id);
@@ -340,6 +342,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         @Override
                         public void onAnnotationClick(Symbol symbol) {
                             Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
+                            Intent intent = new Intent(getApplicationContext(), FightEat.class);
+                            intent.putExtra("id", symbol.getIconImage());
+                            startActivity(intent);
                         }
                     });
                 }
@@ -353,83 +358,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             permissionsManager.requestLocationPermissions(this);
         }
     }
-
-
-    /*@Override
-    public void onStyleLoaded(@NonNull final Style style) {
-        Log.d("MyMap", "Style ready");
-        this.style = style;
-
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                final List<Double> lats = dbMap.mapDao().getMapLat();
-                final List<Double> lons = dbMap.mapDao().getMapLon();
-
-                Log.d("MyMap", "size: " + lats.size());
-                Log.d("MyMap", "lat: " + lats + " lon: "+ lons);
-
-                //id getmap
-                String s1 = "";
-                String s2 = "";
-                for(int i = 0; i<dbMap.mapDao().getMap().size() ; i++){
-                    s1 += dbMap.mapDao().getMapId().get(i) + " ";
-                }
-                Log.d("MyMap", "id getmap: " + s1);
-
-                //id getimg
-                for(int i = 0; i<dbImages.imagesDao().getImageId().size() ; i++){
-                    s2 += dbMap.mapDao().getMapName().get(i) + " ";
-                }
-                Log.d("MyMap", "nome getmap: " + s2);
-
-
-                for (int i = 0 ; i<lats.size() ; i++){
-                    Log.d("MyMap", "lat: " + lats.get((i)) + " lon: "+ lons.get((i)));
-
-                    final int finalI = i;
-                    final String finalId = dbImages.imagesDao().getImageId().get(i);
-
-                    Log.d("MyMap", "finalId: " + finalId);
-
-                    String base64_img = dbImages.imagesDao().getImage().get(i);
-                    byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
-                    final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-                    //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
-
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            style.addImage(finalId, BitmapImg);
-                            symbolManager = new SymbolManager(mapView, mapboxMap, style);
-                            symbolManager.setIconAllowOverlap(true);
-                            symbolManager.setTextAllowOverlap(true);
-                            symbolManager.create(new SymbolOptions()
-                                    .withLatLng(new LatLng(lats.get((finalI)), lons.get(finalI)))
-                                    .withIconImage(finalId)
-                                    .withIconSize(0.5f));
-
-                            symbolManager.addClickListener(new OnSymbolClickListener() {
-                                @Override
-                                public void onAnnotationClick(Symbol symbol) {
-                                    Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
-                                }
-                            });
-                        }
-                    });
-
-                }
-            }
-        });
-
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            showUserLastLocation();
-        } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
-        }
-    }*/
 
     public void showUserLastLocation() {
         LocationEngineRequest request = new LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
@@ -445,6 +373,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationComponent.setLocationComponentEnabled(true);
         locationComponent.setCameraMode(CameraMode.TRACKING);
         locationComponent.setRenderMode(RenderMode.COMPASS);
+        
 
         CameraPosition position = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
@@ -472,8 +401,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void rankingButtonPressed(View view) {
-        Intent intent = new Intent(getApplicationContext(), Ranking.class);
-        startActivity(intent);
+        final JSONObject jsonBody = new JSONObject();
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+
+        try {
+            jsonBody.put("session_id", settings.getString("session_id", null));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest getRanking = new JsonObjectRequest(
+                "https://ewserver.di.unimi.it/mobicomp/mostri/ranking.php",
+                jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("getRanking", "primi 20 giocatori: " + response.toString());
+
+                        List<Player> players = Model.deserializeRanking(response);
+                        Model.getInstance().populatePlayers(players);
+                        Intent intent = new Intent(getApplicationContext(), Ranking.class);
+                        startActivity(intent);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("getRanking", "Richiesta fallita: "+error);
+                    }
+                }
+        );
+        requestQueue.add(getRanking);
+
     }
 
 

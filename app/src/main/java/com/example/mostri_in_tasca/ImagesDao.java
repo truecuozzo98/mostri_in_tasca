@@ -13,6 +13,9 @@ public interface ImagesDao {
     @Query("SELECT * FROM images")
     List<Images> getAllImages();
 
+    @Query("SELECT img, id FROM images WHERE id=(:id)")
+    List<Images> selectImageById(String id);
+
     @Query("SELECT id FROM images")
     List<String> getImageId();
 

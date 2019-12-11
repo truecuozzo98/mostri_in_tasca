@@ -45,6 +45,14 @@ public class Model {
         return players;
     }
 
+    public Map getAllMapById(String id){
+        for(int i=0 ; i<Model.getInstance().getMapList().size() ; i++){
+            if(id.equals(Model.getInstance().getMapId(i))){
+                return Model.getInstance().getMapList().get(i);
+            }
+        }
+        return null;
+    }
     public String getMapId(int i){ return mapList.get(i).getId(); }
     public double getMapLat(int i){ return mapList.get(i).getLat(); }
     public double getMapLon(int i){ return mapList.get(i).getLon(); }
