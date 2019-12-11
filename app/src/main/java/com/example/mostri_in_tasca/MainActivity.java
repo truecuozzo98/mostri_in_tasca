@@ -334,12 +334,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("MyMap", "img size" + Model.getInstance().getImageList().size());
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
             int size = Model.getInstance().getMapList().size();
+
+            /*for(int i=0 ; i<size ; i++){
+                style.removeImage(Model.getInstance().getImageId(i));
+            }*/
+
             for (int i = 0 ; i<size ; i++) {
                 final double lat = Model.getInstance().getMapLat(i);
                 final double lon = Model.getInstance().getMapLon(i);
                 final String id = Model.getInstance().getImageId(i);
 
-                Log.d("MyMap", "finalId: " + id);
+                //Log.d("MyMap", "finalId: " + id);
 
                 String base64_img = Model.getInstance().getImageImg(i);
                 byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
@@ -350,6 +355,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
+                        //style.removeImage(id);
                         //Log.d("MyMap", "Prima di remove immagine è presente?: " + style.getImage(id));
                         //style.removeImage(id);
                         //Log.d("MyMap", "Prima di add immagine è presente?: " + style.getImage(id));
@@ -367,8 +373,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             @Override
                             public void onAnnotationClick(Symbol symbol) {
                                 /*Log.d("MyMap", "Bitmap: " + BitmapImg);
-                                 Log.d("MyMap", "id: " + id);
-                                 Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());*/
+                                Log.d("MyMap", "id: " + id);*/
+                                //style.removeImage(id);
                                 Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
                                 Intent intent = new Intent(getApplicationContext(), FightEat.class);
                                 intent.putExtra("id", symbol.getIconImage());
@@ -378,6 +384,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
             }
+
+
+
             /*if(symbolManager.getAnnotations() != null) {
                 for (int j = 0; j < symbolManager.getAnnotations().size(); j++) {
                     Symbol symbol = symbolManager.getAnnotations().get(i);
