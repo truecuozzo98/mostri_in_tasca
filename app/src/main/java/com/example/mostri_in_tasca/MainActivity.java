@@ -36,6 +36,7 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
+import com.mapbox.mapboxsdk.location.LocationComponentOptions;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -67,6 +68,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
     private static final long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private SymbolManager symbolManager;
+    Handler handler = new Handler();
+    Runnable runnable;
+    int delay = 15*1000; //Delay for 15 seconds.  One second = 1000 milliseconds.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +124,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onResume() {
         super.onResume();
         mapView.onResume();
+
+        /*handler.postDelayed(runnable = new Runnable() {
+                public void run() {
+                    //do something
+
+                    handler.postDelayed(runnable, 100);
+                }
+            }, 100);*/
+
+        /*handler.postDelayed(runnable = new Runnable() {
+            public void run() {
+                //do something
+
+                handler.postDelayed(runnable, delay);
+            }
+        }, delay);*/
 
         getmapRequest();
         populateMapModel();
@@ -309,53 +329,71 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStyleLoaded(@NonNull final Style style) {
         Log.d("MyMap", "Style ready");
         this.style = style;
-        symbolManager = new SymbolManager(mapView, mapboxMap, style);
-        symbolManager.deleteAll();
 
-        int size = Model.getInstance().getMapList().size();
-        for (int i = 0 ; i<size ; i++){
-            final double lat = Model.getInstance().getMapLat(i);
-            final double lon = Model.getInstance().getMapLon(i);
-            final String id = Model.getInstance().getImageId(i);
-
-            Log.d("MyMap", "finalId: " + id);
-
-            String base64_img = Model.getInstance().getImageImg(i);
-            byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
-            final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-            //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
-
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    style.addImage(id, BitmapImg);
-                    symbolManager = new SymbolManager(mapView, mapboxMap, style);
-                    symbolManager.setIconAllowOverlap(true);
-                    symbolManager.setTextAllowOverlap(true);
-                    symbolManager.create(new SymbolOptions()
-                            .withLatLng(new LatLng(lat, lon))
-                            .withIconImage(id)
-                            .withIconSize(0.5f));
-
-                    symbolManager.addClickListener(new OnSymbolClickListener() {
-                        @Override
-                        public void onAnnotationClick(Symbol symbol) {
-                            Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
-                            Intent intent = new Intent(getApplicationContext(), FightEat.class);
-                            intent.putExtra("id", symbol.getIconImage());
-                            startActivity(intent);
-                        }
-                    });
-                }
-            });
-        }
-
+        Log.d("MyMap", "map size" + Model.getInstance().getMapList().size());
+        Log.d("MyMap", "img size" + Model.getInstance().getImageList().size());
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            showUserLastLocation();
-        } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
+            int size = Model.getInstance().getMapList().size();
+            for (int i = 0 ; i<size ; i++) {
+                final double lat = Model.getInstance().getMapLat(i);
+                final double lon = Model.getInstance().getMapLon(i);
+                final String id = Model.getInstance().getImageId(i);
+
+                Log.d("MyMap", "finalId: " + id);
+
+                String base64_img = Model.getInstance().getImageImg(i);
+                byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+                final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
+
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        //Log.d("MyMap", "Prima di remove immagine è presente?: " + style.getImage(id));
+                        //style.removeImage(id);
+                        //Log.d("MyMap", "Prima di add immagine è presente?: " + style.getImage(id));
+                        style.addImage(id, BitmapImg);
+                        //Log.d("MyMap", "Dopo immagine è presente?: " + style.getImage(id));
+                        symbolManager = new SymbolManager(mapView, mapboxMap, style);
+                        symbolManager.setIconAllowOverlap(true);
+                        symbolManager.setTextAllowOverlap(true);
+                        symbolManager.create(new SymbolOptions()
+                                .withLatLng(new LatLng(lat, lon))
+                                .withIconImage(id)
+                                .withIconSize(0.5f));
+
+                        symbolManager.addClickListener(new OnSymbolClickListener() {
+                            @Override
+                            public void onAnnotationClick(Symbol symbol) {
+                                /*Log.d("MyMap", "Bitmap: " + BitmapImg);
+                                 Log.d("MyMap", "id: " + id);
+                                 Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());*/
+                                Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
+                                Intent intent = new Intent(getApplicationContext(), FightEat.class);
+                                intent.putExtra("id", symbol.getIconImage());
+                                startActivity(intent);
+                            }
+                        });
+                    }
+                });
+            }
+            /*if(symbolManager.getAnnotations() != null) {
+                for (int j = 0; j < symbolManager.getAnnotations().size(); j++) {
+                    Symbol symbol = symbolManager.getAnnotations().get(i);
+
+                    if(symbol != null)
+                    if (symbol.getLatLng().distanceTo(locationLatLng) > 250) {
+                        Log.e("mysymid", symbol.getId() + "");
+
+                        symbolManager.getAnnotations().remove(symbol.getId());
+                        symbolManager.delete(symbol);
+                        symbolOptionsList.remove(j);
+                        symbolManager.updateSource();
+                        //moneyMap.remove(money.getG());
+                    }
+                }
+             }*/
         }
     }
 
@@ -368,27 +406,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationEngine.requestLocationUpdates(request, locationListeningCallback, getMainLooper());
         locationEngine.getLastLocation(locationListeningCallback);
 
+        LocationComponentOptions locationComponentOptions = LocationComponentOptions.builder(this).accuracyColor(0xFF0000FF).accuracyAlpha((float) 0.3).build();
+        LocationComponentActivationOptions locationComponentActivationOptions = LocationComponentActivationOptions
+                .builder(this, style)
+                .locationComponentOptions(locationComponentOptions)
+                .build();
+
         LocationComponent locationComponent = mapboxMap.getLocationComponent();
-        locationComponent.activateLocationComponent(LocationComponentActivationOptions.builder(this, style).build());
+        locationComponent.activateLocationComponent(locationComponentActivationOptions);
+
         locationComponent.setLocationComponentEnabled(true);
         locationComponent.setCameraMode(CameraMode.TRACKING);
         locationComponent.setRenderMode(RenderMode.COMPASS);
-        
+
 
         CameraPosition position = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
                 .zoom(10)
                 //.zoom(15)
-                .tilt(20)
                 .build();
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
     }
 
     public void onMyPositionButtonPressed(View view) {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            if (location != null) {
-                showUserLastLocation();
-            }
+            showUserLastLocation();
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
@@ -478,6 +520,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onPermissionResult(boolean granted) {
         if (granted) {
             showUserLastLocation();
+            //mapView.invalidate();
             mapView.getMapAsync(this);
         } else {
             Toast.makeText(this, "Permesso non dato", Toast.LENGTH_LONG).show();
