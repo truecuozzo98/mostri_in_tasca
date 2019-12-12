@@ -38,8 +38,13 @@ public class FightEat extends AppCompatActivity {
             public void run() {
                 Intent myIntent = getIntent();
                 String id = "";
+                boolean tooFar = false;
                 if (myIntent.hasExtra("id")) {
                     id = myIntent.getStringExtra("id");
+                }
+
+                if (myIntent.hasExtra("tooFar")) {
+                    tooFar = myIntent.getBooleanExtra("tooFar", false);
                 }
 
                 String base64_img = dbImages.imagesDao().selectImageById(id).get(0).getImg();
@@ -49,7 +54,6 @@ public class FightEat extends AppCompatActivity {
 
                 ImageView image = findViewById(R.id.imageView);
                 image.setImageDrawable(d);
-
 
                 Map map = Model.getInstance().getAllMapById(id);
                 //Log.d("fighteat", map + "   " + base64_img);
@@ -77,6 +81,13 @@ public class FightEat extends AppCompatActivity {
                     tv.setText("Taglia: Media");
                 } else {
                     tv.setText("Taglia: Grande");
+                }
+
+                tv = findViewById((R.id.distance_warning));
+                if(tooFar){
+                    btn.setVisibility(View.GONE);
+                } else {
+                    tv.setVisibility(View.GONE);
                 }
             }
         });

@@ -39,26 +39,38 @@
         android:layout_marginBottom="20dp"
         android:text="Taglia" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/distance_warning"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_marginBottom="10dp"
+        android:gravity="center"
+        android:text="Sei troppo lontano!"
+        android:textColor="#FFFF0000"
+        android:textSize="18sp" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <Button
             android:id="@+id/back"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:layout_weight=".5"
-            android:text="annulla" />
+            android:text="annulla"
+            app:layout_constraintEnd_toStartOf="@+id/fighteat"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/fighteat"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_weight=".5"
-            android:text="combatti/mangia" />
-    </LinearLayout>
+            android:text="combatti/mangia"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/back"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>
