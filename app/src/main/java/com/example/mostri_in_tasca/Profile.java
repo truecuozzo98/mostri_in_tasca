@@ -19,11 +19,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class Profile extends AppCompatActivity {
+    RankingAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,4 +101,23 @@ public class Profile extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+
+        if(findViewById(R.id.recyclerView)!=null){
+            RecyclerView recyclerView = findViewById(R.id.recyclerView);
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            adapter = new RankingAdapter(this, this, Model.getInstance().getPlayersList());
+            recyclerView.setAdapter(adapter);
+        }
+    }
+
+    public void onRankingButtonPressed(View v){
+        Intent intent = new Intent(getApplicationContext(), Ranking.class);
+        startActivity(intent);
+    }
+
+
 }

@@ -49,11 +49,14 @@ public class ViewHolder extends RecyclerView.ViewHolder {
         Log.d("getRanking", "Propic: " + BitmapImg);
         Log.d("getRanking", "uid: " + player.getUsername());
 
-        if(player.getUsername() == null || player.getUsername() == "" || player.getUsername() == "null"){
+        if(player.getUsername() == null || player.getUsername().equals("") || player.getUsername().equals("null")){
             usernameTV.setText("username non inserito");
-            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
         } else {
             usernameTV.setText(player.getUsername());
+        }
+
+        if(usernameTV.getText()=="username non inserito"){
+            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
         }
 
         if(BitmapImg == null){

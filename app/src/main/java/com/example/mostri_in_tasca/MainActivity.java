@@ -447,11 +447,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void profileButtonPressed(View view) {
-        Intent intent = new Intent(getApplicationContext(), Profile.class);
-        startActivity(intent);
-    }
-
-    public void rankingButtonPressed(View view) {
         final JSONObject jsonBody = new JSONObject();
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
@@ -471,7 +466,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         List<Player> players = Model.deserializeRanking(response);
                         Model.getInstance().populatePlayers(players);
-                        Intent intent = new Intent(getApplicationContext(), Ranking.class);
+                        Intent intent = new Intent(getApplicationContext(), Profile.class);
                         startActivity(intent);
                     }
                 },
