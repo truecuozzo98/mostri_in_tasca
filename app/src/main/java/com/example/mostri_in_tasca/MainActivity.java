@@ -13,7 +13,6 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
@@ -107,25 +106,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } else {
             Log.d("session_id", "Non è la prima volta; il session_id è: " + settings.getString("session_id", null));
         }
-
-        //mostra la posizione solo quando la mappa ha finito di caricare
-        final MapView.OnDidFinishLoadingMapListener listener = new MapView.OnDidFinishLoadingMapListener(){
-            @Override
-            public void onDidFinishLoadingMap() {
-                showUserLastLocation();
-                Log.d("onCreate", "onDidFinish");
-            }
-        };
-
-        mapView.addOnDidFinishLoadingMapListener(listener);
-
-        //dopo un secondo rimuove il listener (evita di spostare la camera nella mia posizione ogni volta che torno indietro
-        handler.postDelayed(runnable = new Runnable() {
-            public void run() {
-                mapView.removeOnDidFinishLoadingMapListener(listener);
-                handler.postDelayed(runnable, 1000);
-            }
-        }, 1000);
     }
 
     @Override
@@ -136,6 +116,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (!PermissionsManager.areLocationPermissionsGranted(this)) {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
+        } else {
+            //mostra la posizione solo quando la mappa ha finito di caricare
+            mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
+                @Override
+                public void onDidFinishLoadingMap() {
+                    showUserLastLocation();
+                    Log.d("onCreate", "onDidFinish");
+                }
+            });
         }
     }
 
@@ -396,21 +385,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 //style.removeImage(id);
                                 Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
                                 boolean flag = false;
-                                if(location==null){
-                                    calculateLastLocation();
-                                }
+                                if(location!=null){
+                                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                    double distance = symbol.getLatLng().distanceTo(latLng);
+                                    Log.d("MyMap", "distance: " + distance);                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
+                                    if(distance > 50000){
+                                        flag = true;
+                                    }
 
-                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                double distance = symbol.getLatLng().distanceTo(latLng);
-                                Log.d("MyMap", "distance: " + distance);                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
-                                if(distance > 50000){
-                                    flag = true;
+                                    Intent intent = new Intent(getApplicationContext(), FightEat.class);
+                                    intent.putExtra("id", symbol.getIconImage());
+                                    intent.putExtra("tooFar", flag);
+                                    startActivity(intent);
                                 }
-
-                                Intent intent = new Intent(getApplicationContext(), FightEat.class);
-                                intent.putExtra("id", symbol.getIconImage());
-                                intent.putExtra("tooFar", flag);
-                                startActivity(intent);
                             }
                         });
                     }
@@ -436,28 +423,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
              }*/
         }
-    }
-
-    public void calculateLastLocation(){
-        LocationEngineRequest request = new LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
-                .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
-                .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME)
-                .build();
-
-        locationEngine.requestLocationUpdates(request, locationListeningCallback, getMainLooper());
-        locationEngine.getLastLocation(locationListeningCallback);
-
-        LocationComponentOptions locationComponentOptions = LocationComponentOptions.builder(this).accuracyColor(0xFF0000FF).accuracyAlpha((float) 0.3).build();
-        LocationComponentActivationOptions locationComponentActivationOptions = LocationComponentActivationOptions
-                .builder(this, style)
-                .locationComponentOptions(locationComponentOptions)
-                .build();
-
-        LocationComponent locationComponent = mapboxMap.getLocationComponent();
-        locationComponent.activateLocationComponent(locationComponentActivationOptions);
-        locationComponent.setLocationComponentEnabled(true);
-        locationComponent.setCameraMode(CameraMode.TRACKING);
-        locationComponent.setRenderMode(RenderMode.COMPASS);
     }
 
     public void showUserLastLocation() {
@@ -500,6 +465,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void profileButtonPressed(View view) {
+        getProfileRequest();
+
         final JSONObject jsonBody = new JSONObject();
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
@@ -531,9 +498,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
         );
         requestQueue.add(getRanking);
-
     }
 
+    public void getProfileRequest() {
+        final JSONObject jsonBody = new JSONObject();
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+
+        try {
+            jsonBody.put("session_id", settings.getString("session_id", null));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest getRanking = new JsonObjectRequest(
+                "https://ewserver.di.unimi.it/mobicomp/mostri/getprofile.php",
+                jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("getprofile", "profile json (dentro getProfileRequest): " + response.toString());
+                        Model.getInstance().setProfile(response);
+                        Log.d("getprofile", "profile model (dentro getProfileRequest): " + Model.getInstance().getProfile().toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("getRanking", "Richiesta fallita: "+error);
+                    }
+                }
+        );
+        requestQueue.add(getRanking);
+    }
 
     @Override
     public void onPause() {
@@ -578,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (granted) {
             showUserLastLocation();
             //mapView.invalidate();
-            mapView.getMapAsync(this);
+            //mapView.getMapAsync(this);
         } else {
             Toast.makeText(this, "Permesso non dato", Toast.LENGTH_LONG).show();
         }

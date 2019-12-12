@@ -100,5 +100,14 @@ public class FightEat extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        /*Button btn = findViewById(R.id.fighteat);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), .class);
+                startActivity(intent);
+            }
+        });*/
     }
 }

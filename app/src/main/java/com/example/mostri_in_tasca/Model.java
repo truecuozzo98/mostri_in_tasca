@@ -2,6 +2,8 @@ package com.example.mostri_in_tasca;
 
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,6 +16,7 @@ public class Model {
     private ArrayList<Map> mapList;
     private ArrayList<Images> imgList;
     private ArrayList<Player> players;
+    private ProfileClass profile;
 
     public static Model getInstance() {
         return ourInstance;
@@ -35,6 +38,28 @@ public class Model {
 
     public void populatePlayers(List<Player> players) {
         this.players = new ArrayList<>(players);
+    }
+
+    public void setProfile(JSONObject response) {
+        String username = null;
+        String xp = null;
+        String lp = null;
+        String img = null;
+
+        try {
+            username = String.valueOf(response.get("username"));
+            xp = String.valueOf(response.get("xp"));
+            lp = String.valueOf(response.get("lp"));
+            img = String.valueOf(response.get("img"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        this.profile =  new ProfileClass(username, xp, lp, img);
+    }
+
+    public ProfileClass getProfile(){
+        return profile;
     }
 
     public ArrayList<Map> getMapList() {
