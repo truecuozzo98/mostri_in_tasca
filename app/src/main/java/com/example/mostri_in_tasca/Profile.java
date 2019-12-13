@@ -103,9 +103,9 @@ public class Profile extends AppCompatActivity {
         });
 
         TextView xpTv = findViewById(R.id.xp);
-        xpTv.setText("XP: " + Model.getInstance().getProfile().getXp());
+        xpTv.setText("Punti esperienza: " + Model.getInstance().getProfile().getXp());
         TextView lpTv = findViewById(R.id.lp);
-        lpTv.setText("Life Points: " + Model.getInstance().getProfile().getLp());
+        lpTv.setText("Punti vita: " + Model.getInstance().getProfile().getLp());
 
         //crea un listener che al tocco sull'immagine apre la galleria
         ImageView propic = this.findViewById(R.id.profile_image);

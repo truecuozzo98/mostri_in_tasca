@@ -58,16 +58,18 @@ android:baselineAligned="false">
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Life points:"
+                android:text="Punti vita:"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/username" />
 
             <TextView
                 android:id="@+id/textView4"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="XP"
+                android:layout_marginEnd="10dp"
+                android:text="Punti esperienza:"
+                app:layout_constraintEnd_toStartOf="@+id/xp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView3" />
 
@@ -95,12 +97,11 @@ android:baselineAligned="false">
                 android:id="@+id/xp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
                 android:text="TextView"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/username"
-                app:layout_constraintTop_toBottomOf="@+id/lp" />
+                app:layout_constraintStart_toStartOf="@+id/username" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

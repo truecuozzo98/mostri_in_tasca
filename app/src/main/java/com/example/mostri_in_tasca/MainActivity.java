@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         } else {
+            getProfileRequest();
             //mostra la posizione solo quando la mappa ha finito di caricare
             mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
                 @Override
@@ -389,10 +390,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                                     double distance = symbol.getLatLng().distanceTo(latLng);
                                     Log.d("MyMap", "distance: " + distance);                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
-                                    if(distance > 50000){
+                                    if(distance > 500000){
                                         flag = true;
                                     }
-
+                                    getProfileRequest();
                                     Intent intent = new Intent(getApplicationContext(), FightEat.class);
                                     intent.putExtra("id", symbol.getIconImage());
                                     intent.putExtra("tooFar", flag);

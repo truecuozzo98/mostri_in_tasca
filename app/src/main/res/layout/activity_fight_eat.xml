@@ -40,6 +40,16 @@
         android:text="Taglia" />
 
     <TextView
+        android:id="@+id/death_warning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Attenzione! Se combatti contro questo mostro potresti morire!"
+        android:textColor="#FFFF0000"
+        android:textSize="18sp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/distance_warning"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
