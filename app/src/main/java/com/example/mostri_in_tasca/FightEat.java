@@ -44,7 +44,9 @@ public class FightEat extends AppCompatActivity {
         try{
             this.getSupportActionBar().hide();
         }
-        catch (NullPointerException e){}
+        catch (NullPointerException e){
+            Log.d("titlebar", e.toString());
+        }
 
         settings = getSharedPreferences("preferences",0);
         dbMap = Room.databaseBuilder(getApplicationContext(), MapDatabase.class,"db_map").build();
@@ -164,37 +166,6 @@ public class FightEat extends AppCompatActivity {
 
             }
         });
-    }
-
-    public void getProfileRequest() {
-        final JSONObject jsonBody = new JSONObject();
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-
-        try {
-            jsonBody.put("session_id", settings.getString("session_id", null));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        JsonObjectRequest getRanking = new JsonObjectRequest(
-                "https://ewserver.di.unimi.it/mobicomp/mostri/getprofile.php",
-                jsonBody,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("getprofile", "profile json (dentro getProfileRequest): " + response.toString());
-                        Model.getInstance().setProfile(response);
-                        Log.d("getprofile", "profile model (dentro getProfileRequest): " + Model.getInstance().getProfile().toString());
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d("getRanking", "Richiesta fallita: "+error);
-                    }
-                }
-        );
-        requestQueue.add(getRanking);
     }
 
     public void fighteatRequest(){

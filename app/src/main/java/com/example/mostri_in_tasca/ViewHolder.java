@@ -35,9 +35,15 @@ public class ViewHolder extends RecyclerView.ViewHolder {
     }
 
     public void setPlayer(Player player, int i) {
+        Log.d("base64", player.getImg());
         String base64_img = player.getImg();
-        byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
-        Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        Bitmap bitmapImg = null;
+        try{
+            byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+            bitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        } catch (Exception e){
+            Log.d("base64", e.toString());
+        }
 
         if(i<10){
             positionTv.setText((i+1)+" ");
@@ -46,7 +52,7 @@ public class ViewHolder extends RecyclerView.ViewHolder {
         }
 
 
-        Log.d("getRanking", "Propic: " + BitmapImg);
+        Log.d("getRanking", "Propic: " + bitmapImg);
         Log.d("getRanking", "uid: " + player.getUsername());
 
         if(player.getUsername() == null || player.getUsername().equals("") || player.getUsername().equals("null")){
@@ -59,10 +65,10 @@ public class ViewHolder extends RecyclerView.ViewHolder {
             usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
         }
 
-        if(BitmapImg == null){
+        if(bitmapImg == null){
             propicTv.setImageResource(R.drawable.no_propic);
         } else {
-            propicTv.setImageBitmap(BitmapImg);
+            propicTv.setImageBitmap(bitmapImg);
         }
 
         lpTV.setText(player.getLp());

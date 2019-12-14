@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SymbolManager symbolManager;
     Handler handler = new Handler();
     Runnable runnable;
-    int delay = 15*1000; //Delay for 15 seconds.  One second = 1000 milliseconds.
+    int delay = 10000; //Delay for 10 seconds.  One second = 1000 milliseconds.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +79,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try{
             this.getSupportActionBar().hide();
         }
-        catch (NullPointerException e){}
+        catch (NullPointerException e){
+            Log.d("titlebar", e.toString());
+        }
 
         settings = getSharedPreferences("preferences",0);
         dbMap = Room.databaseBuilder(getApplicationContext(), MapDatabase.class,"db_map").build();
@@ -106,6 +108,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } else {
             Log.d("session_id", "Non è la prima volta; il session_id è: " + settings.getString("session_id", null));
         }
+
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            getProfileRequest();
+            //mostra la posizione solo quando la mappa ha finito di caricare
+            mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
+                @Override
+                public void onDidFinishLoadingMap() {
+                    showUserLastLocation();
+                    Log.d("onCreate", "onDidFinish");
+                }
+            });
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
     }
 
     @Override
@@ -116,16 +133,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (!PermissionsManager.areLocationPermissionsGranted(this)) {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
-        } else {
-            getProfileRequest();
-            //mostra la posizione solo quando la mappa ha finito di caricare
-            mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
-                @Override
-                public void onDidFinishLoadingMap() {
-                    showUserLastLocation();
-                    Log.d("onCreate", "onDidFinish");
-                }
-            });
         }
     }
 
@@ -144,8 +151,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         /*handler.postDelayed(runnable = new Runnable() {
             public void run() {
-                //do something
-
+                Log.d("delay", "delayed");
+                mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
+                    @Override
+                    public void onDidFinishLoadingMap() {
+                        mapView.invalidate();
+                    }
+                });
                 handler.postDelayed(runnable, delay);
             }
         }, delay);*/
@@ -179,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             SharedPreferences.Editor editor = settings.edit();
                             editor.putString("session_id",session_id);
                             editor.apply();
+                            getmapRequest();
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -339,8 +352,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("MyMap", "Style ready");
         this.style = style;
 
-        Log.d("MyMap", "map size" + Model.getInstance().getMapList().size());
-        Log.d("MyMap", "img size" + Model.getInstance().getImageList().size());
+        Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
+        Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
             int size = Model.getInstance().getMapList().size();
 
@@ -404,8 +417,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
             }
-
-
 
             /*if(symbolManager.getAnnotations() != null) {
                 for (int j = 0; j < symbolManager.getAnnotations().size(); j++) {
@@ -487,6 +498,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         List<Player> players = Model.deserializeRanking(response);
                         Model.getInstance().populatePlayers(players);
+                        Log.d("getRanking", String.valueOf(Model.getInstance().getPlayersList().size()));
                         Intent intent = new Intent(getApplicationContext(), Profile.class);
                         startActivity(intent);
                     }
@@ -574,6 +586,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onPermissionResult(boolean granted) {
         if (granted) {
             showUserLastLocation();
+            getProfileRequest();
             //mapView.invalidate();
             //mapView.getMapAsync(this);
         } else {

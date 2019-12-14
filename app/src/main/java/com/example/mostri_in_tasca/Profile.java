@@ -8,8 +8,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -17,7 +15,6 @@ import android.text.method.KeyListener;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -37,7 +34,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class Profile extends AppCompatActivity {
@@ -53,7 +49,9 @@ public class Profile extends AppCompatActivity {
         try{
             this.getSupportActionBar().hide();
         }
-        catch (NullPointerException e){}
+        catch (NullPointerException e){
+            Log.d("titlebar", e.toString());
+        }
 
         settings = getSharedPreferences("preferences",0);
     }
@@ -64,12 +62,13 @@ public class Profile extends AppCompatActivity {
         //getProfileRequest();
 
         final TextView tv = findViewById(R.id.username);
-        String username = Model.getInstance().getProfile().getUsername();
-        if(username == null || username.equals("") || username.equals("null")){
-            tv.setText("username non inserito");
-            tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
+        Log.d("usernameProfile", Model.getInstance().getProfile().getUsername());
+        if(Model.getInstance().getProfile().getUsername() == null || Model.getInstance().getProfile().getUsername().equals("null")){
+            tv.setText("");
+            tv.setHint("username non inserito");
+        } else {
+            tv.setText(Model.getInstance().getProfile().getUsername());
         }
-        tv.setText(Model.getInstance().getProfile().getUsername());
         tv.setTag(tv.getKeyListener());
         tv.setKeyListener(null);                                                    //rende editText non modificabile
         tv.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));        //setta underline dell'editText trasparente
@@ -94,10 +93,10 @@ public class Profile extends AppCompatActivity {
                         imm.hideSoftInputFromWindow(tv.getWindowToken(), 0);
                     }
                     tv.setKeyListener(null);
-                    setProfileRequest(tv.getText().toString(), Model.getInstance().getProfile().getImg());
                     ColorStateList colorStateList = ColorStateList.valueOf(Color.TRANSPARENT);
                     tv.setBackgroundTintList(colorStateList);
                     mod.setText("Modifica");
+                    setProfileRequest(tv.getText().toString(), Model.getInstance().getProfile().getImg());
                 }
             }
         });
@@ -167,38 +166,6 @@ public class Profile extends AppCompatActivity {
     public void onRankingButtonPressed(View v){
         Intent intent = new Intent(getApplicationContext(), Ranking.class);
         startActivity(intent);
-    }
-
-    public void getProfileRequest() {
-        final JSONObject jsonBody = new JSONObject();
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-
-        try {
-            jsonBody.put("session_id", settings.getString("session_id", null));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        JsonObjectRequest getRanking = new JsonObjectRequest(
-                "https://ewserver.di.unimi.it/mobicomp/mostri/getprofile.php",
-                jsonBody,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("getprofile", "profile json: " + response.toString());
-                        Model.getInstance().setProfile(response);
-                        Log.d("getprofile", "profile model: " + Model.getInstance().getProfile().toString());
-                        Log.d("propic", "profile model: " + Model.getInstance().getProfile().getImg());
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d("getRanking", "Richiesta fallita: "+error);
-                    }
-                }
-        );
-        requestQueue.add(getRanking);
     }
 
     public void setProfileRequest(String username, final String img) {

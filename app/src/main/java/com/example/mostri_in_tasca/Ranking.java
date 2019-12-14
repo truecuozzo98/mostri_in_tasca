@@ -2,6 +2,7 @@ package com.example.mostri_in_tasca;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -20,7 +21,9 @@ public class Ranking extends AppCompatActivity {
         try{
             this.getSupportActionBar().hide();
         }
-        catch (NullPointerException e){}
+        catch (NullPointerException e){
+            Log.d("titlebar", e.toString());
+        }
 
         settings = getSharedPreferences("preferences",0);
     }
