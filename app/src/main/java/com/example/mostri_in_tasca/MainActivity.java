@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.collection.LongSparseArray;
 import androidx.room.Room;
 
 import com.android.volley.RequestQueue;
@@ -30,6 +32,7 @@ import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -42,16 +45,27 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.annotation.AnnotationManager;
+import com.mapbox.mapboxsdk.plugins.annotation.Circle;
+import com.mapbox.mapboxsdk.plugins.annotation.CircleManager;
+import com.mapbox.mapboxsdk.plugins.annotation.CircleOptions;
 import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
+import com.mapbox.mapboxsdk.style.layers.CircleLayer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.mapbox.mapboxsdk.style.expressions.Expression.exponential;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleColor;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleOpacity;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleRadius;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Style.OnStyleLoaded, PermissionsListener {
     SharedPreferences settings;
@@ -67,9 +81,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
     private static final long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private SymbolManager symbolManager;
-    Handler handler = new Handler();
-    Runnable runnable;
-    int delay = 10000; //Delay for 10 seconds.  One second = 1000 milliseconds.
+    private List<SymbolManager> symbolManagers = new ArrayList<>();
+    private List<Circle> circles = new ArrayList<>();
+    private LongSparseArray<Circle> circleArray;
+    private List<Symbol> symbols = new ArrayList<>();
+    private LongSparseArray<Symbol> symbolArray;
+    private Handler handler = new Handler();
+    private Runnable runnable;
+    private int delay = 10000; //Delay for 10 seconds.  One second = 1000 milliseconds.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -352,38 +371,73 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("MyMap", "Style ready");
         this.style = style;
 
+        /*CircleLayer circleLayer = new CircleLayer("user-ray", "user-ray");
+        // replace street-trees-DC-9gvg5l with the name of your source layer
+        circleLayer.withProperties(
+                circleOpacity(0.6f),
+                circleColor(Color.parseColor("#0000FF")),
+                circleRadius((float) 50));
+        style.addLayer(circleLayer);*/
+
+
         Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
         Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            int size = Model.getInstance().getMapList().size();
+            if(location == null){
+                showUserLastLocation();
+            }
 
-            /*for(int i=0 ; i<size ; i++){
-                style.removeImage(Model.getInstance().getImageId(i));
-            }*/
+            //symbolManager.delete(symbols);
+            //Log.d("symbol", "dopo il delete: " + symbolArray.size());
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    CircleManager circleManager = new CircleManager(mapView, mapboxMap, style);
+                    circleManager.create(new CircleOptions()
+                            .withCircleColor(String.valueOf(Color.BLUE))
+                            .withCircleRadius((float) 50)
+                            .withLatLng(new LatLng(location.getLatitude(), location.getLongitude()))
+                            .withCircleOpacity((float) 0.6)
+                    );
+                    circleManager.delete(circles);
 
-            for (int i = 0 ; i<size ; i++) {
-                final double lat = Model.getInstance().getMapLat(i);
-                final double lon = Model.getInstance().getMapLon(i);
-                final String id = Model.getInstance().getImageId(i);
+                    circleArray = circleManager.getAnnotations();
+                    for (int i = 0; i < circleArray.size(); i++) {
+                        circles.add(circleArray.valueAt(i));
+                    }
+                    Log.d("circle", "circles size: " + circles.size());
 
-                //Log.d("MyMap", "finalId: " + id);
+                    int size = Model.getInstance().getMapList().size();
 
-                String base64_img = Model.getInstance().getImageImg(i);
-                byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
-                final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    /*if(symbolManager!=null){
+                        Log.d("MyMap", "symbols size: " + symbols.size());
+                        symbolManager.delete(symbols);
+                    }*/
 
-                //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
+                    for(SymbolManager x : symbolManagers){
+                        x.delete(symbols);
+                    }
 
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
+                    for (int i = 0 ; i<size ; i++) {
+                        final double lat = Model.getInstance().getMapLat(i);
+                        final double lon = Model.getInstance().getMapLon(i);
+                        final String id = Model.getInstance().getImageId(i);
+
+                        //Log.d("MyMap", "finalId: " + id);
+
+                        String base64_img = Model.getInstance().getImageImg(i);
+                        byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+                        final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                        //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
                         //style.removeImage(id);
                         //Log.d("MyMap", "Prima di remove immagine è presente?: " + style.getImage(id));
                         //style.removeImage(id);
                         //Log.d("MyMap", "Prima di add immagine è presente?: " + style.getImage(id));
                         style.addImage(id, BitmapImg);
-                        //Log.d("MyMap", "Dopo immagine è presente?: " + style.getImage(id));
                         symbolManager = new SymbolManager(mapView, mapboxMap, style);
+                        symbolManager.delete(symbols);
+                        //Log.d("MyMap", "Dopo immagine è presente?: " + style.getImage(id));
                         symbolManager.setIconAllowOverlap(true);
                         symbolManager.setTextAllowOverlap(true);
                         symbolManager.create(new SymbolOptions()
@@ -413,10 +467,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     startActivity(intent);
                                 }
                             }
-                        });
+                            });
+
+                        symbolManagers.add(symbolManager);
                     }
-                });
-            }
+
+                    for(SymbolManager x : symbolManagers){
+                        symbolArray = x.getAnnotations();
+                        for (int j = 0; j < symbolArray.size(); j++) {
+                            symbols.add(symbolArray.valueAt(j));
+                        }
+                    }
+
+                    /*symbolArray = symbolManager.getAnnotations();
+                    for (int j = 0; j < symbolArray.size(); j++) {
+                        symbols.add(symbolArray.valueAt(j));
+                    }
+                    Log.d("symbol", "prima del delete: " + symbolArray.size());*/
+                }
+            });
+
+
 
             /*if(symbolManager.getAnnotations() != null) {
                 for (int j = 0; j < symbolManager.getAnnotations().size(); j++) {
