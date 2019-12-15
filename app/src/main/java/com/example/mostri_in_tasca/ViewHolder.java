@@ -31,7 +31,7 @@ public class ViewHolder extends RecyclerView.ViewHolder {
         propicTv = itemView.findViewById(R.id.profile_image);
         usernameTV = itemView.findViewById(R.id.username);
         lpTV = itemView.findViewById(R.id.lp);
-        xpTV = itemView.findViewById(R.id.xp);
+        xpTV = itemView.findViewById(R.id.xp_map);
     }
 
     public void setPlayer(Player player, int i) {
@@ -50,7 +50,6 @@ public class ViewHolder extends RecyclerView.ViewHolder {
         } else {
             positionTv.setText(String.valueOf(i+1));
         }
-
 
         Log.d("getRanking", "Propic: " + bitmapImg);
         Log.d("getRanking", "uid: " + player.getUsername());

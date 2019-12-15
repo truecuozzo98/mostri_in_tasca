@@ -101,7 +101,7 @@ public class Profile extends AppCompatActivity {
             }
         });
 
-        TextView xpTv = findViewById(R.id.xp);
+        TextView xpTv = findViewById(R.id.xp_map);
         xpTv.setText("Punti esperienza: " + Model.getInstance().getProfile().getXp());
         TextView lpTv = findViewById(R.id.lp);
         lpTv.setText("Punti vita: " + Model.getInstance().getProfile().getLp());

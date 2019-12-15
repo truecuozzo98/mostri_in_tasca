@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
+import android.opengl.Visibility;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,10 +15,12 @@ import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.collection.LongSparseArray;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.room.Room;
 
 import com.android.volley.RequestQueue;
@@ -57,6 +61,7 @@ import com.mapbox.mapboxsdk.style.layers.CircleLayer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -129,7 +134,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            getProfileRequest();
+            //getProfileRequest();
+
             //mostra la posizione solo quando la mappa ha finito di caricare
             mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
                 @Override
@@ -152,6 +158,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (!PermissionsManager.areLocationPermissionsGranted(this)) {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
+        } else {
+            getProfileRequest();
         }
     }
 
@@ -386,9 +394,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if(location == null){
                 showUserLastLocation();
             }
-
-            //symbolManager.delete(symbols);
-            //Log.d("symbol", "dopo il delete: " + symbolArray.size());
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
@@ -409,11 +414,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     int size = Model.getInstance().getMapList().size();
 
-                    /*if(symbolManager!=null){
-                        Log.d("MyMap", "symbols size: " + symbols.size());
-                        symbolManager.delete(symbols);
-                    }*/
-
                     for(SymbolManager x : symbolManagers){
                         x.delete(symbols);
                     }
@@ -423,21 +423,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         final double lon = Model.getInstance().getMapLon(i);
                         final String id = Model.getInstance().getImageId(i);
 
-                        //Log.d("MyMap", "finalId: " + id);
-
                         String base64_img = Model.getInstance().getImageImg(i);
                         byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
                         final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
-                        //BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.cbimage)
-                        //style.removeImage(id);
-                        //Log.d("MyMap", "Prima di remove immagine è presente?: " + style.getImage(id));
-                        //style.removeImage(id);
-                        //Log.d("MyMap", "Prima di add immagine è presente?: " + style.getImage(id));
                         style.addImage(id, BitmapImg);
                         symbolManager = new SymbolManager(mapView, mapboxMap, style);
-                        symbolManager.delete(symbols);
-                        //Log.d("MyMap", "Dopo immagine è presente?: " + style.getImage(id));
                         symbolManager.setIconAllowOverlap(true);
                         symbolManager.setTextAllowOverlap(true);
                         symbolManager.create(new SymbolOptions()
@@ -448,15 +439,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         symbolManager.addClickListener(new OnSymbolClickListener() {
                             @Override
                             public void onAnnotationClick(Symbol symbol) {
-                                /*Log.d("MyMap", "Bitmap: " + BitmapImg);
-                                Log.d("MyMap", "id: " + id);*/
-                                //style.removeImage(id);
                                 Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
                                 boolean flag = false;
                                 if(location!=null){
                                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                    //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
                                     double distance = symbol.getLatLng().distanceTo(latLng);
-                                    Log.d("MyMap", "distance: " + distance);                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
+                                    Log.d("MyMap", "distance: " + distance);
                                     if(distance > 500000){
                                         flag = true;
                                     }
@@ -467,7 +456,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     startActivity(intent);
                                 }
                             }
-                            });
+                        });
 
                         symbolManagers.add(symbolManager);
                     }
@@ -478,33 +467,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             symbols.add(symbolArray.valueAt(j));
                         }
                     }
-
-                    /*symbolArray = symbolManager.getAnnotations();
-                    for (int j = 0; j < symbolArray.size(); j++) {
-                        symbols.add(symbolArray.valueAt(j));
-                    }
-                    Log.d("symbol", "prima del delete: " + symbolArray.size());*/
                 }
             });
-
-
-
-            /*if(symbolManager.getAnnotations() != null) {
-                for (int j = 0; j < symbolManager.getAnnotations().size(); j++) {
-                    Symbol symbol = symbolManager.getAnnotations().get(i);
-
-                    if(symbol != null)
-                    if (symbol.getLatLng().distanceTo(locationLatLng) > 250) {
-                        Log.e("mysymid", symbol.getId() + "");
-
-                        symbolManager.getAnnotations().remove(symbol.getId());
-                        symbolManager.delete(symbol);
-                        symbolOptionsList.remove(j);
-                        symbolManager.updateSource();
-                        //moneyMap.remove(money.getG());
-                    }
-                }
-             }*/
         }
     }
 
@@ -603,6 +567,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Log.d("getprofile", "profile json (dentro getProfileRequest): " + response.toString());
                         Model.getInstance().setProfile(response);
                         Log.d("getprofile", "profile model (dentro getProfileRequest): " + Model.getInstance().getProfile().toString());
+
+                        ConstraintLayout cl = findViewById((R.id.profile_map));
+                        if(cl != null){
+                            cl.setVisibility(View.VISIBLE);
+                            TextView tv = findViewById(R.id.username_map);
+                            String uid = Model.getInstance().getProfile().getUsername();
+                            if(uid == null || uid.equals("") || uid.equals("null")){
+                                tv.setText("username non inserito");
+                                tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
+                            } else {
+                                tv.setText(uid);
+                                tv.setTypeface(tv.getTypeface(), Typeface.NORMAL);
+                            }
+
+                            tv = findViewById(R.id.xp_map);
+                            tv.setText(String.format("PE: %s", Model.getInstance().getProfile().getXp()));
+                            tv = findViewById(R.id.lp_map);
+                            tv.setText(String.format("PV: %s", Model.getInstance().getProfile().getLp()));
+                        }
                     }
                 },
                 new Response.ErrorListener() {

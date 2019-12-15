@@ -49,7 +49,7 @@
         app:layout_constraintTop_toBottomOf="@+id/profile_image" />
 
     <TextView
-        android:id="@+id/xp"
+        android:id="@+id/xp_map"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
@@ -66,7 +66,7 @@
         android:text="Punti vita"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/xp" />
+        app:layout_constraintTop_toBottomOf="@+id/xp_map" />
 
     <Button
         android:id="@+id/button"
