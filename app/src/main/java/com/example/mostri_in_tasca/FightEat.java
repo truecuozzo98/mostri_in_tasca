@@ -168,7 +168,7 @@ public class FightEat extends AppCompatActivity {
     }
 
     public void fighteatRequest(){
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);                    //crea il dialog
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);               //crea il dialog
         builder.setTitle("Risultato");
         builder.setPositiveButton("Okay", new DialogInterface.OnClickListener() {          //crea il pulsate affermativo
             public void onClick(DialogInterface dialog, int id) {

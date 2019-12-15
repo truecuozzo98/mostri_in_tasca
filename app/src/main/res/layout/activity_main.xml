@@ -48,7 +48,7 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/imageView4"
+                android:id="@+id/propic_map"
                 android:layout_width="96dp"
                 android:layout_height="96dp"
                 android:layout_marginBottom="50dp"
@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:text="username"
-                app:layout_constraintStart_toEndOf="@+id/imageView4"
+                app:layout_constraintStart_toEndOf="@+id/propic_map"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
@@ -74,7 +74,7 @@
                 android:layout_marginStart="10dp"
                 android:text="PV: "
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/imageView4" />
+                app:layout_constraintStart_toEndOf="@+id/propic_map" />
 
             <TextView
                 android:id="@+id/xp_map"
@@ -83,7 +83,7 @@
                 android:layout_marginStart="10dp"
                 android:text="PE:"
                 app:layout_constraintBottom_toTopOf="@+id/lp_map"
-                app:layout_constraintStart_toEndOf="@+id/imageView4"
+                app:layout_constraintStart_toEndOf="@+id/propic_map"
                 app:layout_constraintTop_toBottomOf="@+id/username_map" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 

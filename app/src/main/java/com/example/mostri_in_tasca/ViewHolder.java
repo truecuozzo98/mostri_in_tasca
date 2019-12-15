@@ -42,7 +42,7 @@ public class ViewHolder extends RecyclerView.ViewHolder {
             byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
             bitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
         } catch (Exception e){
-            Log.d("base64", e.toString());
+            e.printStackTrace();
         }
 
         if(i<10){
@@ -51,17 +51,21 @@ public class ViewHolder extends RecyclerView.ViewHolder {
             positionTv.setText(String.valueOf(i+1));
         }
 
-        Log.d("getRanking", "Propic: " + bitmapImg);
-        Log.d("getRanking", "uid: " + player.getUsername());
+        //Log.d("getRanking", "Propic: " + bitmapImg);
+        //Log.d("getRanking", "uid: " + player.getUsername());
 
         if(player.getUsername() == null || player.getUsername().equals("") || player.getUsername().equals("null")){
             usernameTV.setText("username non inserito");
+            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
         } else {
             usernameTV.setText(player.getUsername());
         }
 
-        if(usernameTV.getText()=="username non inserito"){
-            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
+        String s = (String) usernameTV.getText();
+        if(!s.equals("username non inserito")){
+            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.NORMAL);
+            Log.d("ranking", s);
+            Log.d("ranking", "typeface" + usernameTV.getTypeface().toString());
         }
 
         if(bitmapImg == null){

@@ -1,23 +1,46 @@
 package com.example.mostri_in_tasca;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.IntentSender;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.database.DatabaseErrorHandler;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.net.Uri;
 import android.opengl.Visibility;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.UserHandle;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.collection.LongSparseArray;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -63,6 +86,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,8 +163,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            //getProfileRequest();
-
             //mostra la posizione solo quando la mappa ha finito di caricare
             mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
                 @Override
@@ -144,9 +171,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Log.d("onCreate", "onDidFinish");
                 }
             });
-        } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
         }
     }
 
@@ -387,7 +411,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 circleRadius((float) 50));
         style.addLayer(circleLayer);*/
 
-
         Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
         Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
@@ -410,14 +433,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     for (int i = 0; i < circleArray.size(); i++) {
                         circles.add(circleArray.valueAt(i));
                     }
-                    Log.d("circle", "circles size: " + circles.size());
-
-                    int size = Model.getInstance().getMapList().size();
 
                     for(SymbolManager x : symbolManagers){
                         x.delete(symbols);
                     }
-
+                    int size = Model.getInstance().getMapList().size();
                     for (int i = 0 ; i<size ; i++) {
                         final double lat = Model.getInstance().getMapLat(i);
                         final double lon = Model.getInstance().getMapLon(i);
@@ -568,24 +588,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Model.getInstance().setProfile(response);
                         Log.d("getprofile", "profile model (dentro getProfileRequest): " + Model.getInstance().getProfile().toString());
 
-                        ConstraintLayout cl = findViewById((R.id.profile_map));
-                        if(cl != null){
-                            cl.setVisibility(View.VISIBLE);
-                            TextView tv = findViewById(R.id.username_map);
-                            String uid = Model.getInstance().getProfile().getUsername();
-                            if(uid == null || uid.equals("") || uid.equals("null")){
-                                tv.setText("username non inserito");
-                                tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
-                            } else {
-                                tv.setText(uid);
-                                tv.setTypeface(tv.getTypeface(), Typeface.NORMAL);
-                            }
-
-                            tv = findViewById(R.id.xp_map);
-                            tv.setText(String.format("PE: %s", Model.getInstance().getProfile().getXp()));
-                            tv = findViewById(R.id.lp_map);
-                            tv.setText(String.format("PV: %s", Model.getInstance().getProfile().getLp()));
-                        }
+                        setProfileOnMap();
                     }
                 },
                 new Response.ErrorListener() {
@@ -596,6 +599,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
         );
         requestQueue.add(getRanking);
+    }
+
+    public void setProfileOnMap(){
+        ConstraintLayout cl = findViewById(R.id.profile_map);
+        if(cl != null){
+            cl.setVisibility(View.VISIBLE);
+
+            String base64_img = Model.getInstance().getProfile().getImg();
+            Bitmap bitmapImg = null;
+            try{
+                byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+                bitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            ImageView iv = findViewById(R.id.propic_map);
+            if(bitmapImg == null){
+                iv.setImageResource(R.drawable.no_propic);
+            } else {
+                iv.setImageBitmap(bitmapImg);
+            }
+
+            TextView tv = findViewById(R.id.username_map);
+            String uid = Model.getInstance().getProfile().getUsername();
+            if(uid == null || uid.equals("") || uid.equals("null")){
+                tv.setText("username non inserito");
+                tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
+            } else {
+                tv.setText(uid);
+                tv.setTypeface(tv.getTypeface(), Typeface.NORMAL);
+            }
+
+            tv = findViewById(R.id.xp_map);
+            tv.setText(String.format("PE: %s", Model.getInstance().getProfile().getXp()));
+            tv = findViewById(R.id.lp_map);
+            tv.setText(String.format("PV: %s", Model.getInstance().getProfile().getLp()));
+        }
     }
 
     @Override
@@ -644,7 +684,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             //mapView.invalidate();
             //mapView.getMapAsync(this);
         } else {
-            Toast.makeText(this, "Permesso non dato", Toast.LENGTH_LONG).show();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setPositiveButton("Ho capito", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+
+                    permissionsManager.requestLocationPermissions(MainActivity.this);
+                }
+            });
+
+            builder.setMessage("Per iniziare a giocare devi fornirci i permessi per acquisire la tua posizione");
+            AlertDialog dialog = builder.create();
+            dialog.show();
         }
     }
 
