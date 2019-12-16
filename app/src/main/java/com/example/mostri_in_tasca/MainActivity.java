@@ -76,6 +76,9 @@ import com.mapbox.mapboxsdk.plugins.annotation.AnnotationManager;
 import com.mapbox.mapboxsdk.plugins.annotation.Circle;
 import com.mapbox.mapboxsdk.plugins.annotation.CircleManager;
 import com.mapbox.mapboxsdk.plugins.annotation.CircleOptions;
+import com.mapbox.mapboxsdk.plugins.annotation.Line;
+import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
+import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
 import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
@@ -116,8 +119,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private SymbolManager symbolManager;
     private List<SymbolManager> symbolManagers = new ArrayList<>();
-    private List<Circle> circles = new ArrayList<>();
-    private LongSparseArray<Circle> circleArray;
+    private List<Line> lines = new ArrayList<>();
+    private LongSparseArray<Line> lineArray;
     private List<Symbol> symbols = new ArrayList<>();
     private LongSparseArray<Symbol> symbolArray;
     private Handler handler = new Handler();
@@ -398,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapboxMap.setStyle(Style.MAPBOX_STREETS, this);
     }
 
-    /*private PolygonOptions generatePerimeter(LatLng centerCoordinates, double radiusInKilometers, int numberOfSides) {
+    private List<LatLng> generateCirconference(LatLng centerCoordinates, double radiusInKilometers, int numberOfSides) {
         List<LatLng> positions = new ArrayList<>();
         double distanceX = radiusInKilometers / (111.319 * Math.cos(centerCoordinates.getLatitude() * Math.PI / 180));
         double distanceY = radiusInKilometers / 110.574;
@@ -418,11 +421,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     centerCoordinates.getLongitude() + x);
             positions.add(position);
         }
-        return new PolygonOptions()
-                .addAll(positions)
-                .fillColor(Color.BLUE)
-                .alpha(0.4f);
-    }*/
+        positions.add(positions.get(0));
+        return positions;
+    }
 
     public void refreshMap(){
         runnable = new Runnable() {
@@ -439,24 +440,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         @Override
                         public void run() {
 
-                            /*mapboxMap.addPolygon(generatePerimeter(
-                                new LatLng(45, 9),
-                                1,
-                                64));*/
+                            LineManager lineManager = new LineManager(mapView, mapboxMap, style);
+                            LatLng center = new LatLng(location.getLatitude(), location.getLongitude());
+                            lineManager.create(new LineOptions().withLatLngs(generateCirconference(center, 0.05, 256)));
+                            lineManager.delete(lines);
 
-
-                            CircleManager circleManager = new CircleManager(mapView, mapboxMap, style);
-                            circleManager.create(new CircleOptions()
-                                    .withCircleColor(String.valueOf(Color.BLUE))
-                                    .withCircleRadius((float) 50)
-                                    .withLatLng(new LatLng(location.getLatitude(), location.getLongitude()))
-                                    .withCircleOpacity((float) 0.6)
-                            );
-                            circleManager.delete(circles);
-
-                            circleArray = circleManager.getAnnotations();
-                            for (int i = 0; i < circleArray.size(); i++) {
-                                circles.add(circleArray.valueAt(i));
+                            lineArray = lineManager.getAnnotations();
+                            for (int i = 0; i < lineArray.size(); i++) {
+                                lines.add(lineArray.valueAt(i));
                             }
 
                             for(SymbolManager x : symbolManagers){
@@ -520,7 +511,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-// The first time this runs we don't need a delay so we immediately post.
+        // The first time this runs we don't need a delay so we immediately post.
         handler.post(runnable);
     }
 
@@ -529,15 +520,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("MyMap", "Style ready");
         this.style = style;
         refreshMap();
-        /*CircleLayer circleLayer = new CircleLayer("user-ray", "user-ray");
-        // replace street-trees-DC-9gvg5l with the name of your source layer
-        circleLayer.withProperties(
-                circleOpacity(0.6f),
-                circleColor(Color.parseColor("#0000FF")),
-                circleRadius((float) 50));
-        style.addLayer(circleLayer);*/
-
-
     }
 
     public void showUserLastLocation() {
@@ -564,8 +546,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         CameraPosition position = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                .zoom(10)
-                //.zoom(15)
+                .zoom(16)
                 .build();
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 1000);
     }
