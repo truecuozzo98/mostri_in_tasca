@@ -398,11 +398,137 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapboxMap.setStyle(Style.MAPBOX_STREETS, this);
     }
 
+    /*private PolygonOptions generatePerimeter(LatLng centerCoordinates, double radiusInKilometers, int numberOfSides) {
+        List<LatLng> positions = new ArrayList<>();
+        double distanceX = radiusInKilometers / (111.319 * Math.cos(centerCoordinates.getLatitude() * Math.PI / 180));
+        double distanceY = radiusInKilometers / 110.574;
+
+        double slice = (2 * Math.PI) / numberOfSides;
+
+        double theta;
+        double x;
+        double y;
+        LatLng position;
+        for (int i = 0; i < numberOfSides; ++i) {
+            theta = i * slice;
+            x = distanceX * Math.cos(theta);
+            y = distanceY * Math.sin(theta);
+
+            position = new LatLng(centerCoordinates.getLatitude() + y,
+                    centerCoordinates.getLongitude() + x);
+            positions.add(position);
+        }
+        return new PolygonOptions()
+                .addAll(positions)
+                .fillColor(Color.BLUE)
+                .alpha(0.4f);
+    }*/
+
+    public void refreshMap(){
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                Log.d("delay", "delayed");
+                Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
+                Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
+                if (PermissionsManager.areLocationPermissionsGranted(getApplicationContext())) {
+                    if(location == null){
+                        showUserLastLocation();
+                    }
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            /*mapboxMap.addPolygon(generatePerimeter(
+                                new LatLng(45, 9),
+                                1,
+                                64));*/
+
+
+                            CircleManager circleManager = new CircleManager(mapView, mapboxMap, style);
+                            circleManager.create(new CircleOptions()
+                                    .withCircleColor(String.valueOf(Color.BLUE))
+                                    .withCircleRadius((float) 50)
+                                    .withLatLng(new LatLng(location.getLatitude(), location.getLongitude()))
+                                    .withCircleOpacity((float) 0.6)
+                            );
+                            circleManager.delete(circles);
+
+                            circleArray = circleManager.getAnnotations();
+                            for (int i = 0; i < circleArray.size(); i++) {
+                                circles.add(circleArray.valueAt(i));
+                            }
+
+                            for(SymbolManager x : symbolManagers){
+                                x.delete(symbols);
+                            }
+                            int size = Model.getInstance().getMapList().size();
+                            for (int i = 0 ; i<size ; i++) {
+                                final double lat = Model.getInstance().getMapLat(i);
+                                final double lon = Model.getInstance().getMapLon(i);
+                                final String id = Model.getInstance().getImageId(i);
+
+                                String base64_img = Model.getInstance().getImageImg(i);
+                                byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
+                                final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                                style.addImage(id, BitmapImg);
+                                symbolManager = new SymbolManager(mapView, mapboxMap, style);
+                                symbolManager.setIconAllowOverlap(true);
+                                symbolManager.setTextAllowOverlap(true);
+                                symbolManager.create(new SymbolOptions()
+                                        .withLatLng(new LatLng(lat, lon))
+                                        .withIconImage(id)
+                                        .withIconSize(0.5f));
+
+                                symbolManager.addClickListener(new OnSymbolClickListener() {
+                                    @Override
+                                    public void onAnnotationClick(Symbol symbol) {
+                                        Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
+                                        boolean flag = false;
+                                        if(location!=null){
+                                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
+                                            double distance = symbol.getLatLng().distanceTo(latLng);
+                                            Log.d("MyMap", "distance: " + distance);
+                                            if(distance > 500000){
+                                                flag = true;
+                                            }
+                                            getProfileRequest();
+                                            Intent intent = new Intent(getApplicationContext(), FightEat.class);
+                                            intent.putExtra("id", symbol.getIconImage());
+                                            intent.putExtra("tooFar", flag);
+                                            startActivity(intent);
+                                        }
+                                    }
+                                });
+
+                                symbolManagers.add(symbolManager);
+                            }
+
+                            for(SymbolManager x : symbolManagers){
+                                symbolArray = x.getAnnotations();
+                                for (int j = 0; j < symbolArray.size(); j++) {
+                                    symbols.add(symbolArray.valueAt(j));
+                                }
+                            }
+                        }
+                    });
+                }
+                // Schedule the next execution time for this runnable.
+                handler.postDelayed(this, delay);
+            }
+        };
+
+// The first time this runs we don't need a delay so we immediately post.
+        handler.post(runnable);
+    }
+
     @Override
     public void onStyleLoaded(@NonNull final Style style) {
         Log.d("MyMap", "Style ready");
         this.style = style;
-
+        refreshMap();
         /*CircleLayer circleLayer = new CircleLayer("user-ray", "user-ray");
         // replace street-trees-DC-9gvg5l with the name of your source layer
         circleLayer.withProperties(
@@ -411,85 +537,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 circleRadius((float) 50));
         style.addLayer(circleLayer);*/
 
-        Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
-        Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            if(location == null){
-                showUserLastLocation();
-            }
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    CircleManager circleManager = new CircleManager(mapView, mapboxMap, style);
-                    circleManager.create(new CircleOptions()
-                            .withCircleColor(String.valueOf(Color.BLUE))
-                            .withCircleRadius((float) 50)
-                            .withLatLng(new LatLng(location.getLatitude(), location.getLongitude()))
-                            .withCircleOpacity((float) 0.6)
-                    );
-                    circleManager.delete(circles);
 
-                    circleArray = circleManager.getAnnotations();
-                    for (int i = 0; i < circleArray.size(); i++) {
-                        circles.add(circleArray.valueAt(i));
-                    }
-
-                    for(SymbolManager x : symbolManagers){
-                        x.delete(symbols);
-                    }
-                    int size = Model.getInstance().getMapList().size();
-                    for (int i = 0 ; i<size ; i++) {
-                        final double lat = Model.getInstance().getMapLat(i);
-                        final double lon = Model.getInstance().getMapLon(i);
-                        final String id = Model.getInstance().getImageId(i);
-
-                        String base64_img = Model.getInstance().getImageImg(i);
-                        byte[] decodedString = Base64.decode(base64_img, Base64.DEFAULT);
-                        final Bitmap BitmapImg = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-                        style.addImage(id, BitmapImg);
-                        symbolManager = new SymbolManager(mapView, mapboxMap, style);
-                        symbolManager.setIconAllowOverlap(true);
-                        symbolManager.setTextAllowOverlap(true);
-                        symbolManager.create(new SymbolOptions()
-                                .withLatLng(new LatLng(lat, lon))
-                                .withIconImage(id)
-                                .withIconSize(0.5f));
-
-                        symbolManager.addClickListener(new OnSymbolClickListener() {
-                            @Override
-                            public void onAnnotationClick(Symbol symbol) {
-                                Log.d("MyMap", "Clicked on object with id: " + symbol.getIconImage());
-                                boolean flag = false;
-                                if(location!=null){
-                                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                    //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
-                                    double distance = symbol.getLatLng().distanceTo(latLng);
-                                    Log.d("MyMap", "distance: " + distance);
-                                    if(distance > 500000){
-                                        flag = true;
-                                    }
-                                    getProfileRequest();
-                                    Intent intent = new Intent(getApplicationContext(), FightEat.class);
-                                    intent.putExtra("id", symbol.getIconImage());
-                                    intent.putExtra("tooFar", flag);
-                                    startActivity(intent);
-                                }
-                            }
-                        });
-
-                        symbolManagers.add(symbolManager);
-                    }
-
-                    for(SymbolManager x : symbolManagers){
-                        symbolArray = x.getAnnotations();
-                        for (int j = 0; j < symbolArray.size(); j++) {
-                            symbols.add(symbolArray.valueAt(j));
-                        }
-                    }
-                }
-            });
-        }
     }
 
     public void showUserLastLocation() {

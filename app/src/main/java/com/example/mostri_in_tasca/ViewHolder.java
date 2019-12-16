@@ -56,16 +56,8 @@ public class ViewHolder extends RecyclerView.ViewHolder {
 
         if(player.getUsername() == null || player.getUsername().equals("") || player.getUsername().equals("null")){
             usernameTV.setText("username non inserito");
-            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.BOLD_ITALIC);
         } else {
             usernameTV.setText(player.getUsername());
-        }
-
-        String s = (String) usernameTV.getText();
-        if(!s.equals("username non inserito")){
-            usernameTV.setTypeface(usernameTV.getTypeface(), Typeface.NORMAL);
-            Log.d("ranking", s);
-            Log.d("ranking", "typeface" + usernameTV.getTypeface().toString());
         }
 
         if(bitmapImg == null){
