@@ -162,21 +162,11 @@ public class FightEat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 fighteatRequest();
-
             }
         });
     }
 
     public void fighteatRequest(){
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);               //crea il dialog
-        builder.setTitle("Risultato");
-        builder.setPositiveButton("Okay", new DialogInterface.OnClickListener() {          //crea il pulsate affermativo
-            public void onClick(DialogInterface dialog, int id) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-            }
-        });
-
         final JSONObject jsonBody = new JSONObject();
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
@@ -195,29 +185,20 @@ public class FightEat extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.d("fighteat", "Richiesta riuscita: " + response.toString());
-                        Map map_object = Model.getInstance().getAllMapById(id_object);
                         try {
-                            if(response.getBoolean("died")){
-                                builder.setMessage("GAME OVER\nSei stato sconfitto dal mostro, perdi tutti i tuoi punti esperienza!");  //setta il contenuto e il titolo del dialog
-                            } else {
-                                String old_lp = Model.getInstance().getProfile().getLp();
-                                String old_xp = Model.getInstance().getProfile().getXp();
-                                String new_lp = response.getString("lp");
-                                String new_xp = response.getString("xp");
-                                if(map_object.getType().equals("MO")){
-                                    builder.setMessage("Congratulazioni! Hai sconfitto il mostro!\n\nPrima avevi "+old_xp+" punti esperienza e "+old_lp+" punti vita" +
-                                            "\n\nOra hai "+new_xp+" punti esperienza e "+new_lp+" punti vita");
-                                } else {
-                                    builder.setMessage("Bene! Riguadagni punti vita!\n\nPrima avevi "+old_lp+" punti vita\n\nOra hai "+new_lp+" punti vita");
-                                }
-
-                            }
+                            Map map = Model.getInstance().getAllMapById(id_object);
+                            Intent intent = new Intent(getApplicationContext(), Result.class);
+                            intent.putExtra("object_name", map.getName());
+                            intent.putExtra("object_type", map.getType());
+                            intent.putExtra("old_lp", Model.getInstance().getProfile().getLp());
+                            intent.putExtra("old_xp", Model.getInstance().getProfile().getXp());
+                            intent.putExtra("died", response.getBoolean("died"));
+                            intent.putExtra("new_lp", response.getString("lp"));
+                            intent.putExtra("new_xp", response.getString("xp"));
+                            startActivity(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-
-                        final AlertDialog dialog = builder.create();
-                        dialog.show();                                                                   //mostra il dialog
                     }
                 },
                 new Response.ErrorListener() {
