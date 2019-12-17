@@ -390,6 +390,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
+                getmapRequest();
+
                 Log.d("delay", "delayed");
                 Log.d("MyMap", "map size: " + Model.getInstance().getMapList().size());
                 Log.d("MyMap", "img size: " + Model.getInstance().getImageList().size());
