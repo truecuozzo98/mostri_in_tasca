@@ -157,7 +157,6 @@ public class Profile extends AppCompatActivity {
                 ImageView propic = this.findViewById(R.id.profile_image);
                 propic.setImageBitmap(bitmap);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

@@ -124,7 +124,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<Symbol> symbols = new ArrayList<>();
     private LongSparseArray<Symbol> symbolArray;
     private Handler handler = new Handler();
-    private Runnable runnable;
     private int delay = 10000; //Delay for 10 seconds.  One second = 1000 milliseconds.
 
     @Override
@@ -194,27 +193,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onResume() {
         super.onResume();
         mapView.onResume();
-
-        /*handler.postDelayed(runnable = new Runnable() {
-                public void run() {
-                    //do something
-
-                    handler.postDelayed(runnable, 100);
-                }
-            }, 100);*/
-
-        /*handler.postDelayed(runnable = new Runnable() {
-            public void run() {
-                Log.d("delay", "delayed");
-                mapView.addOnDidFinishLoadingMapListener(new MapView.OnDidFinishLoadingMapListener(){
-                    @Override
-                    public void onDidFinishLoadingMap() {
-                        mapView.invalidate();
-                    }
-                });
-                handler.postDelayed(runnable, delay);
-            }
-        }, delay);*/
 
         getmapRequest();
         populateMapModel();
@@ -401,32 +379,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapboxMap.setStyle(Style.MAPBOX_STREETS, this);
     }
 
-    private List<LatLng> generateCirconference(LatLng centerCoordinates, double radiusInKilometers, int numberOfSides) {
-        List<LatLng> positions = new ArrayList<>();
-        double distanceX = radiusInKilometers / (111.319 * Math.cos(centerCoordinates.getLatitude() * Math.PI / 180));
-        double distanceY = radiusInKilometers / 110.574;
-
-        double slice = (2 * Math.PI) / numberOfSides;
-
-        double theta;
-        double x;
-        double y;
-        LatLng position;
-        for (int i = 0; i < numberOfSides; ++i) {
-            theta = i * slice;
-            x = distanceX * Math.cos(theta);
-            y = distanceY * Math.sin(theta);
-
-            position = new LatLng(centerCoordinates.getLatitude() + y,
-                    centerCoordinates.getLongitude() + x);
-            positions.add(position);
-        }
-        positions.add(positions.get(0));
-        return positions;
+    @Override
+    public void onStyleLoaded(@NonNull final Style style) {
+        Log.d("MyMap", "Style ready");
+        this.style = style;
+        refreshMap();
     }
 
     public void refreshMap(){
-        runnable = new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 Log.d("delay", "delayed");
@@ -485,7 +446,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             if(distance > 500000){
                                                 flag = true;
                                             }
-                                            getProfileRequest();
                                             Intent intent = new Intent(getApplicationContext(), FightEat.class);
                                             intent.putExtra("id", symbol.getIconImage());
                                             intent.putExtra("tooFar", flag);
@@ -515,11 +475,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         handler.post(runnable);
     }
 
-    @Override
-    public void onStyleLoaded(@NonNull final Style style) {
-        Log.d("MyMap", "Style ready");
-        this.style = style;
-        refreshMap();
+    private List<LatLng> generateCirconference(LatLng centerCoordinates, double radiusInKilometers, int numberOfSides) {
+        List<LatLng> positions = new ArrayList<>();
+        double distanceX = radiusInKilometers / (111.319 * Math.cos(centerCoordinates.getLatitude() * Math.PI / 180));
+        double distanceY = radiusInKilometers / 110.574;
+
+        double slice = (2 * Math.PI) / numberOfSides;
+
+        double theta;
+        double x;
+        double y;
+        LatLng position;
+        for (int i = 0; i < numberOfSides; ++i) {
+            theta = i * slice;
+            x = distanceX * Math.cos(theta);
+            y = distanceY * Math.sin(theta);
+
+            position = new LatLng(centerCoordinates.getLatitude() + y,
+                    centerCoordinates.getLongitude() + x);
+            positions.add(position);
+        }
+        positions.add(positions.get(0));
+        return positions;
     }
 
     public void showUserLastLocation() {
@@ -710,13 +687,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (granted) {
             showUserLastLocation();
             getProfileRequest();
-            //mapView.invalidate();
-            //mapView.getMapAsync(this);
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setPositiveButton("Ho capito", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-
                     permissionsManager.requestLocationPermissions(MainActivity.this);
                 }
             });
