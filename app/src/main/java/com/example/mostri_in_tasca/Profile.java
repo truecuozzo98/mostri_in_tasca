@@ -19,6 +19,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -39,6 +40,8 @@ import java.io.IOException;
 public class Profile extends AppCompatActivity {
     RankingAdapter adapter;
     SharedPreferences settings;
+    TextView tv_alert_username;
+    TextView tv_alert_propic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +55,12 @@ public class Profile extends AppCompatActivity {
         catch (NullPointerException e){
             Log.d("titlebar", e.toString());
         }
-
         settings = getSharedPreferences("preferences",0);
+
+        tv_alert_username = findViewById(R.id.alert_length_username);
+        tv_alert_propic = findViewById(R.id.alert_propic);
+        tv_alert_username.setVisibility(View.GONE);
+        tv_alert_propic.setVisibility(View.GONE);
     }
 
     @Override
@@ -154,8 +161,10 @@ public class Profile extends AppCompatActivity {
 
                 setProfileRequest(Model.getInstance().getProfile().getUsername(), encoded);
 
-                ImageView propic = this.findViewById(R.id.profile_image);
-                propic.setImageBitmap(bitmap);
+                if(encoded.length()<=137000){
+                    ImageView propic = this.findViewById(R.id.profile_image);
+                    propic.setImageBitmap(bitmap);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -167,11 +176,8 @@ public class Profile extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void setProfileRequest(String username, final String img) {
+    public void setProfileRequest(final String username, final String img) {
         Log.d("propic", "setProfileRequest: " + img);
-
-        Model.getInstance().getProfile().setUsername(username);
-        Model.getInstance().getProfile().setImg(img);
 
         final JSONObject jsonBody = new JSONObject();
         RequestQueue requestQueue = Volley.newRequestQueue(this);
@@ -193,13 +199,25 @@ public class Profile extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         Log.d("setProfile", "Richiesta riuscita: "+response);
                         Log.d("setProfile", "model: " + Model.getInstance().getProfile().getImg());
-                        //getProfileRequest();
+                        Log.d("propicLength", String.valueOf(img.length()));
+
+                        Model.getInstance().getProfile().setUsername(username);
+                        Model.getInstance().getProfile().setImg(img);
+                        tv_alert_username.setVisibility(View.GONE);
+                        tv_alert_propic.setVisibility(View.GONE);
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d("setProfile", "Richiesta fallita: "+error);
+                        if(username.length()>15){
+                            tv_alert_username.setVisibility(View.VISIBLE);
+                        }
+                        Log.d("propicLength", String.valueOf(img.length()));
+                        if(img.length()>137000){
+                            tv_alert_propic.setVisibility(View.VISIBLE);
+                        }
                     }
                 }
         );
