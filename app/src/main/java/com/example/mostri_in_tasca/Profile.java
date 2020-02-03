@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -80,7 +81,7 @@ public class Profile extends AppCompatActivity {
         tv.setKeyListener(null);                                                    //rende editText non modificabile
         tv.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));        //setta underline dell'editText trasparente
 
-        final Button mod = this.findViewById(R.id.mod);
+        final ImageButton mod = this.findViewById(R.id.mod);
         mod.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,7 +94,7 @@ public class Profile extends AppCompatActivity {
                     if (imm != null) {
                         imm.showSoftInput(tv, InputMethodManager.SHOW_IMPLICIT);
                     }
-                    mod.setText("Invia");
+                    mod.setImageResource(R.drawable.tick);
                 } else {
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE); //chiude la tastiera
                     if (imm != null) {
@@ -102,16 +103,16 @@ public class Profile extends AppCompatActivity {
                     tv.setKeyListener(null);
                     ColorStateList colorStateList = ColorStateList.valueOf(Color.TRANSPARENT);
                     tv.setBackgroundTintList(colorStateList);
-                    mod.setText("Modifica");
+                    mod.setImageResource(R.drawable.modify_pencil);
                     setProfileRequest(tv.getText().toString(), Model.getInstance().getProfile().getImg());
                 }
             }
         });
 
         TextView xpTv = findViewById(R.id.xp_map);
-        xpTv.setText("Punti esperienza: " + Model.getInstance().getProfile().getXp());
+        xpTv.setText(Model.getInstance().getProfile().getXp());
         TextView lpTv = findViewById(R.id.lp);
-        lpTv.setText("Punti vita: " + Model.getInstance().getProfile().getLp());
+        lpTv.setText(Model.getInstance().getProfile().getLp());
 
         //crea un listener che al tocco sull'immagine apre la galleria
         ImageView propic = this.findViewById(R.id.profile_image);

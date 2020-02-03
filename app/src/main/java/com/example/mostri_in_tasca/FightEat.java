@@ -84,8 +84,8 @@ public class FightEat extends AppCompatActivity {
 
                 tv = findViewById(R.id.type);
                 if(map.getType().equals("MO")){
-                    tv.setText("Tipo: Mostro");
-                    btn.setBackgroundColor(0xFFFF0000);
+                    tv.setText("Mostro");
+                    //btn.setBackgroundColor(0xFFFF0000);
                     btn.setText("combatti");
 
                     final TextView deathTV = findViewById((R.id.death_warning));
@@ -120,7 +120,7 @@ public class FightEat extends AppCompatActivity {
                             break;
                     }
                 } else {
-                    tv.setText("Tipo: Caramella");
+                    tv.setText("Caramella");
                     btn.setBackgroundColor(0xFF00FF00);
                     btn.setText("Mangia");
                 }
@@ -128,13 +128,13 @@ public class FightEat extends AppCompatActivity {
                 tv = findViewById(R.id.size);
                 switch (map.getSize()){
                     case "S":
-                        tv.setText("Taglia: Piccola");
+                        tv.setText("Piccola");
                         break;
                     case "M":
-                        tv.setText("Taglia: Media");
+                        tv.setText("Media");
                         break;
                     case "L":
-                        tv.setText("Taglia: Grande");
+                        tv.setText("Grande");
                         break;
                 }
 
