@@ -445,7 +445,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
                                             double distance = symbol.getLatLng().distanceTo(latLng);
                                             Log.d("MyMap", "distance: " + distance);
-                                            if(distance > 500000){
+                                            if(distance > 45000){
                                                 flag = true;
                                             }
                                             Intent intent = new Intent(getApplicationContext(), FightEat.class);
