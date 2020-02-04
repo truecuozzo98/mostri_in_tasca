@@ -79,7 +79,7 @@ public class Profile extends AppCompatActivity {
         }
         tv.setTag(tv.getKeyListener());
         tv.setKeyListener(null);                                                    //rende editText non modificabile
-        tv.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));        //setta underline dell'editText trasparente
+        tv.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));        //setta underline dell'editText trasparente
 
         final ImageButton mod = this.findViewById(R.id.mod);
         mod.setOnClickListener(new View.OnClickListener() {
@@ -87,8 +87,8 @@ public class Profile extends AppCompatActivity {
             public void onClick(View v) {
                 if(tv.getKeyListener()==null){
                     tv.setKeyListener((KeyListener) tv.getTag());
-                    ColorStateList colorStateList = ColorStateList.valueOf(Color.RED);
-                    tv.setBackgroundTintList(colorStateList); //set underline rosso
+                    //ColorStateList colorStateList = ColorStateList.valueOf(Color.RED);
+                    //tv.setBackgroundTintList(colorStateList); //set underline rosso
 
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE); //apre la tastiera
                     if (imm != null) {
@@ -101,8 +101,8 @@ public class Profile extends AppCompatActivity {
                         imm.hideSoftInputFromWindow(tv.getWindowToken(), 0);
                     }
                     tv.setKeyListener(null);
-                    ColorStateList colorStateList = ColorStateList.valueOf(Color.TRANSPARENT);
-                    tv.setBackgroundTintList(colorStateList);
+                    //ColorStateList colorStateList = ColorStateList.valueOf(Color.TRANSPARENT);
+                    //tv.setBackgroundTintList(colorStateList);
                     mod.setImageResource(R.drawable.modify_pencil);
                     setProfileRequest(tv.getText().toString(), Model.getInstance().getProfile().getImg());
                 }
