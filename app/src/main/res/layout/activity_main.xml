@@ -43,7 +43,7 @@
             android:elevation="5dp"
             android:onClick="profileButtonPressed"
             android:padding="5dp"
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
@@ -68,23 +68,24 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/lp_map"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:text="PV: "
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/propic_map" />
-
-            <TextView
                 android:id="@+id/xp_map"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:text="PE:"
+                android:text="Punti Esperienza:"
                 app:layout_constraintBottom_toTopOf="@+id/lp_map"
                 app:layout_constraintStart_toEndOf="@+id/propic_map"
                 app:layout_constraintTop_toBottomOf="@+id/username_map" />
+
+            <TextView
+                android:id="@+id/lp_map"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="Punti Vita: "
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/propic_map" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -31,7 +31,7 @@ public class ViewHolder extends RecyclerView.ViewHolder {
         propicTv = itemView.findViewById(R.id.profile_image);
         usernameTV = itemView.findViewById(R.id.username);
         lpTV = itemView.findViewById(R.id.lp);
-        xpTV = itemView.findViewById(R.id.xp_map);
+        xpTV = itemView.findViewById(R.id.xp);
     }
 
     public void setPlayer(Player player, int i) {
@@ -66,7 +66,7 @@ public class ViewHolder extends RecyclerView.ViewHolder {
             propicTv.setImageBitmap(bitmapImg);
         }
 
-        lpTV.setText(player.getLp());
-        xpTV.setText(player.getXp());
+        xpTV.setText("Punti Esperienza: " + player.getXp());
+        lpTV.setText("Punti Vita: " + player.getLp());
     }
 }

@@ -430,10 +430,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 symbolManager = new SymbolManager(mapView, mapboxMap, style);
                                 symbolManager.setIconAllowOverlap(true);
                                 symbolManager.setTextAllowOverlap(true);
-                                symbolManager.create(new SymbolOptions()
+                                Symbol symbol = symbolManager.create(new SymbolOptions()
                                         .withLatLng(new LatLng(lat, lon))
                                         .withIconImage(id)
-                                        .withIconSize(0.5f));
+                                        .withIconSize(0.5f)
+                                        .withIconOpacity((float) 0.5));
+
+                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                double distance = symbol.getLatLng().distanceTo(latLng);
+                                if(distance<50000){
+                                    Log.d("MyMap", "distance 2: " + distance);
+                                    symbol.setIconOpacity((float) 1);
+                                }
 
                                 symbolManager.addClickListener(new OnSymbolClickListener() {
                                     @Override
@@ -442,10 +450,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         boolean flag = false;
                                         if(location!=null){
                                             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                            //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
-                                            double distance = symbol.getLatLng().distanceTo(latLng);
+                                            double distance = symbol.getLatLng().distanceTo(latLng); //calcola e ritorna la distanza in metri dalla posizione dell'utente all'oggetto cliccato
                                             Log.d("MyMap", "distance: " + distance);
-                                            if(distance > 45000){
+                                            if(distance > 50000){
                                                 flag = true;
                                             }
                                             Intent intent = new Intent(getApplicationContext(), FightEat.class);
@@ -640,9 +647,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
             tv = findViewById(R.id.xp_map);
-            tv.setText(String.format("PE: %s", Model.getInstance().getProfile().getXp()));
+            tv.setText(String.format("Punti Esperienza: %s", Model.getInstance().getProfile().getXp()));
             tv = findViewById(R.id.lp_map);
-            tv.setText(String.format("PV: %s", Model.getInstance().getProfile().getLp()));
+            tv.setText(String.format("Punti Vita: %s", Model.getInstance().getProfile().getLp()));
         }
     }
 
